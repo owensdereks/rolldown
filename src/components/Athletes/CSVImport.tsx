@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import Papa from 'papaparse'
 import { useAuth } from '../../contexts/AuthContext'
-import { createAthlete, createContactLog, createRace } from '../../services/api'
+import { createAthlete, createContactLog, enrollAthleteInRace } from '../../services/api'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 
@@ -60,8 +60,6 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
     skipped: number
   } | null>(null)
 
-  // ── Template download ──
-
   const downloadTemplate = () => {
     const csv = [TEMPLATE_HEADERS.join(','), ...TEMPLATE_ROWS].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -72,8 +70,6 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
     a.click()
     URL.revokeObjectURL(url)
   }
-
-  // ── CSV parsing & validation ──
 
   const processFile = useCallback((file: File) => {
     setParseError(null)
@@ -108,37 +104,30 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
             message: '',
           }
 
-          // Validate name
           if (!row.name) {
             row.status = 'error'
             row.message = 'Name is required'
             parsed.push(row)
             continue
           }
-
-          // Validate dates
           if (row.coaching_start_date && !isValidDate(row.coaching_start_date)) {
             row.status = 'error'
             row.message = 'Invalid coaching start date (use YYYY-MM-DD)'
             parsed.push(row)
             continue
           }
-
           if (row.last_contact_date && !isValidDate(row.last_contact_date)) {
             row.status = 'error'
             row.message = 'Invalid last contact date (use YYYY-MM-DD)'
             parsed.push(row)
             continue
           }
-
           if (row.race_date && !isValidDate(row.race_date)) {
             row.status = 'error'
             row.message = 'Invalid race date (use YYYY-MM-DD)'
             parsed.push(row)
             continue
           }
-
-          // Validate race pairing
           if (row.race_name && !row.race_date) {
             row.status = 'error'
             row.message = 'Both race name and date are required'
@@ -152,14 +141,12 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
             continue
           }
 
-          // Duplicate detection
           const nameLower = row.name.toLowerCase()
           if (namesSeen.has(nameLower)) {
             row.status = 'warning'
             row.message = `Duplicate name (same as row ${namesSeen.get(nameLower)})`
           }
           namesSeen.set(nameLower, row.rowNumber)
-
           parsed.push(row)
         }
 
@@ -183,8 +170,6 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
     if (file && file.name.endsWith('.csv')) processFile(file)
     else setParseError('Please upload a .csv file.')
   }
-
-  // ── Import execution ──
 
   const handleImport = async () => {
     if (!rows || !user) return
@@ -215,10 +200,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
         })
 
         if (row.race_name && row.race_date) {
-          await createRace(athlete.id, {
-            race_name: row.race_name,
-            race_date: row.race_date,
-          })
+          await enrollAthleteInRace(user.id, athlete.id, row.race_name, row.race_date)
         }
 
         imported++
@@ -233,16 +215,16 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
     setImporting(false)
   }
 
-  // ── Render: Import result ──
+  // ── Import result ──
 
   if (importResult) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
-          <div className="mx-auto mb-4 text-emerald-500">
+        <div className="bg-surface border border-border rounded-2xl p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-signal-green/10 border border-signal-green/20 flex items-center justify-center mx-auto mb-5">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 mx-auto"
+              className="h-6 w-6 text-signal-green"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -255,14 +237,14 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
               />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-slate-800 mb-2">
+          <h2 className="font-display font-black text-2xl text-ink uppercase tracking-widest mb-2">
             Import Complete
           </h2>
-          <p className="text-sm text-slate-600 mb-6">
+          <p className="text-sm text-ink-dim mb-6 leading-relaxed">
             Successfully imported {importResult.imported} athlete
             {importResult.imported !== 1 ? 's' : ''}.
             {importResult.skipped > 0 &&
-              ` ${importResult.skipped} row${importResult.skipped !== 1 ? 's' : ''} skipped due to errors.`}
+              ` ${importResult.skipped} row${importResult.skipped !== 1 ? 's' : ''} skipped.`}
           </p>
           <Button onClick={onDone}>Done</Button>
         </div>
@@ -270,7 +252,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
     )
   }
 
-  // ── Render: Preview table ──
+  // ── Preview table ──
 
   if (rows) {
     const validCount = rows.filter((r) => r.status !== 'error').length
@@ -279,99 +261,79 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
 
     return (
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-800">
-            Import Preview
-          </h2>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-0.5">
+              CSV Import
+            </p>
+            <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
+              Preview
+            </h2>
+          </div>
           <div className="flex items-center gap-3">
             <Button variant="secondary" onClick={onCancel}>
               Cancel
             </Button>
             <Button onClick={handleImport} disabled={validCount === 0 || importing}>
-              {importing ? 'Importing...' : 'Import'}
+              {importing ? 'Importing...' : `Import ${validCount}`}
             </Button>
           </div>
         </div>
 
-        <p className="text-sm text-slate-600 mb-4">
-          {validCount} athlete{validCount !== 1 ? 's' : ''} ready to import
-          {errorCount > 0 && `, ${errorCount} error${errorCount !== 1 ? 's' : ''}`}
-          {warningCount > 0 && `, ${warningCount} warning${warningCount !== 1 ? 's' : ''}`}
+        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-4">
+          {validCount} ready
+          {errorCount > 0 && ` · ${errorCount} error${errorCount !== 1 ? 's' : ''}`}
+          {warningCount > 0 && ` · ${warningCount} warning${warningCount !== 1 ? 's' : ''}`}
         </p>
 
-        <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto">
+        <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Row
-                </th>
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Name
-                </th>
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Email
-                </th>
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Phone
-                </th>
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Start Date
-                </th>
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Last Contact
-                </th>
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Race
-                </th>
-                <th className="text-left py-2 px-3 text-xs text-slate-500 uppercase tracking-wide font-medium">
-                  Status
-                </th>
+              <tr className="border-b border-border">
+                {['Row', 'Name', 'Email', 'Phone', 'Start Date', 'Last Contact', 'Race', 'Status'].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="text-left py-3 px-4 font-mono text-[10px] text-ink-muted uppercase tracking-widest whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {rows.map((row) => (
-                <tr key={row.rowNumber} className="hover:bg-slate-50">
-                  <td className="py-2 px-3 text-slate-600">{row.rowNumber}</td>
-                  <td className="py-2 px-3 text-slate-800 font-medium">
-                    {row.name || '—'}
-                  </td>
-                  <td className="py-2 px-3 text-slate-600">
-                    {row.email || '—'}
-                  </td>
-                  <td className="py-2 px-3 text-slate-600">
-                    {row.phone || '—'}
-                  </td>
-                  <td className="py-2 px-3 text-slate-600">
+                <tr
+                  key={row.rowNumber}
+                  className="border-b border-border/50 last:border-0 hover:bg-elevated/50 transition-colors"
+                >
+                  <td className="py-3 px-4 font-mono text-xs text-ink-muted">{row.rowNumber}</td>
+                  <td className="py-3 px-4 font-medium text-ink">{row.name || '—'}</td>
+                  <td className="py-3 px-4 text-ink-dim">{row.email || '—'}</td>
+                  <td className="py-3 px-4 text-ink-dim">{row.phone || '—'}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-ink-dim">
                     {row.coaching_start_date || '(today)'}
                   </td>
-                  <td className="py-2 px-3 text-slate-600">
+                  <td className="py-3 px-4 font-mono text-xs text-ink-dim">
                     {row.last_contact_date || '(today)'}
                   </td>
-                  <td className="py-2 px-3 text-slate-600">
-                    {row.race_name
-                      ? `${row.race_name} (${row.race_date})`
-                      : '—'}
+                  <td className="py-3 px-4 text-ink-dim">
+                    {row.race_name ? `${row.race_name} (${row.race_date})` : '—'}
                   </td>
-                  <td className="py-2 px-3">
+                  <td className="py-3 px-4">
                     {row.status === 'valid' && (
-                      <span className="text-emerald-600" title="Valid">
-                        &#10003;
-                      </span>
+                      <span className="text-signal-green text-base leading-none">✓</span>
                     )}
                     {row.status === 'error' && (
-                      <span className="flex items-center gap-1">
-                        <span className="text-red-500" title={row.message}>
-                          &#10007;
-                        </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-signal-red text-base leading-none">✗</span>
                         <Badge variant="red">{row.message}</Badge>
                       </span>
                     )}
                     {row.status === 'warning' && (
-                      <span className="flex items-center gap-1">
-                        <span className="text-amber-500" title={row.message}>
-                          &#9888;
-                        </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-signal-amber text-base leading-none">⚠</span>
                         <Badge variant="amber">{row.message}</Badge>
                       </span>
                     )}
@@ -385,45 +347,52 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
     )
   }
 
-  // ── Render: Upload / template screen ──
+  // ── Upload screen ──
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-slate-800">
-          Import Athletes from CSV
-        </h2>
+        <div>
+          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-0.5">
+            CSV Import
+          </p>
+          <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
+            Import Athletes
+          </h2>
+        </div>
         <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
-        <h3 className="text-sm font-medium text-slate-800 mb-2">
-          1. Download Template
-        </h3>
-        <p className="text-sm text-slate-600 mb-4">
-          Start with our CSV template — it includes the required columns and
-          example rows showing the expected format.
+      <div className="bg-surface border border-border rounded-2xl p-6 mb-4">
+        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-2">
+          Step 1
+        </p>
+        <h3 className="text-sm font-semibold text-ink mb-2">Download Template</h3>
+        <p className="text-sm text-ink-dim mb-4 leading-relaxed">
+          Start with our template — it includes the required columns and example rows showing the
+          expected format.
         </p>
         <Button variant="secondary" onClick={downloadTemplate}>
           Download Template
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <h3 className="text-sm font-medium text-slate-800 mb-2">
-          2. Upload Your Roster
-        </h3>
-        <p className="text-sm text-slate-600 mb-4">
+      <div className="bg-surface border border-border rounded-2xl p-6">
+        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-2">
+          Step 2
+        </p>
+        <h3 className="text-sm font-semibold text-ink mb-2">Upload Your Roster</h3>
+        <p className="text-sm text-ink-dim mb-4 leading-relaxed">
           Fill in the template with your athletes and upload it here.
         </p>
 
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 cursor-pointer ${
             dragOver
-              ? 'border-blue-400 bg-blue-50'
-              : 'border-slate-300 hover:border-slate-400'
+              ? 'border-accent/50 bg-accent/5'
+              : 'border-border hover:border-ink-muted/50 hover:bg-elevated/50'
           }`}
           onDragOver={(e) => {
             e.preventDefault()
@@ -433,7 +402,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <div className="text-slate-400 mb-2">
+          <div className={`mb-3 transition-colors ${dragOver ? 'text-accent' : 'text-ink-muted'}`}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-8 w-8 mx-auto"
@@ -449,10 +418,13 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
               />
             </svg>
           </div>
-          <p className="text-sm text-slate-600 mb-1">
-            Drag and drop your CSV file here, or click to browse
+          <p className="text-sm text-ink-dim mb-1">
+            Drag and drop your CSV here, or{' '}
+            <span className="text-accent">browse</span>
           </p>
-          <p className="text-xs text-slate-400">Only .csv files accepted</p>
+          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
+            Only .csv files accepted
+          </p>
           <input
             ref={fileInputRef}
             type="file"
@@ -463,7 +435,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
         </div>
 
         {parseError && (
-          <p className="mt-3 text-sm text-red-500">{parseError}</p>
+          <p className="mt-3 font-mono text-[10px] text-signal-red">{parseError}</p>
         )}
       </div>
     </div>

@@ -18,9 +18,9 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="text-center py-12 px-4">
-      {icon && <div className="mx-auto mb-4 text-slate-300">{icon}</div>}
-      <h3 className="text-lg font-semibold text-slate-800 mb-2">{heading}</h3>
-      <p className="text-sm text-slate-600 mb-6 max-w-sm mx-auto">
+      {icon && <div className="mx-auto mb-4 text-ink-muted">{icon}</div>}
+      <h3 className="font-display font-bold text-xl text-ink uppercase tracking-wide mb-2">{heading}</h3>
+      <p className="text-sm text-ink-dim mb-6 max-w-xs mx-auto leading-relaxed">
         {description}
       </p>
       {actionLabel && onAction && (

@@ -1,18 +1,18 @@
 import { supabase } from '../lib/supabase'
 import type {
   Athlete,
-  AthleteRace,
   AthleteWithPriority,
   Coach,
   ContactLog,
+  Race,
+  RaceWithAthletes,
 } from '../types'
 
 // ── Athletes ──
 
 export async function getAthletes(coachId: string): Promise<AthleteWithPriority[]> {
   const now = new Date()
-  const in14Days = new Date(now)
-  in14Days.setDate(in14Days.getDate() + 14)
+  const today = now.toISOString().split('T')[0]
 
   // Fetch active athletes
   const { data: athletes, error: athletesErr } = await supabase
@@ -35,29 +35,24 @@ export async function getAthletes(coachId: string): Promise<AthleteWithPriority[
 
   if (contactsErr) throw contactsErr
 
-  // Fetch upcoming races within 14 days
-  const { data: races, error: racesErr } = await supabase
-    .from('athlete_races')
-    .select('*')
-    .in('athlete_id', athleteIds)
-    .gte('race_date', now.toISOString().split('T')[0])
-    .lte('race_date', in14Days.toISOString().split('T')[0])
-    .order('race_date', { ascending: true })
+  // Fetch upcoming races via join table (within 14-day window)
+  const fourteenDaysOut = new Date()
+  fourteenDaysOut.setDate(fourteenDaysOut.getDate() + 14)
+  const cutoff = fourteenDaysOut.toISOString().split('T')[0]
 
-  if (racesErr) throw racesErr
+  const { data: raceEntries } = await supabase
+    .from('athlete_race_entries')
+    .select('athlete_id, races(*)')
+    .in('athlete_id', athleteIds)
+    .gte('races.date', today)
+    .lte('races.date', cutoff)
+    .order('races(date)', { ascending: true })
 
   // Build maps
   const latestContactMap = new Map<string, ContactLog>()
   for (const c of contacts ?? []) {
     if (!latestContactMap.has(c.athlete_id)) {
       latestContactMap.set(c.athlete_id, c as ContactLog)
-    }
-  }
-
-  const upcomingRaceMap = new Map<string, AthleteRace>()
-  for (const r of races ?? []) {
-    if (!upcomingRaceMap.has(r.athlete_id)) {
-      upcomingRaceMap.set(r.athlete_id, r as AthleteRace)
     }
   }
 
@@ -99,12 +94,18 @@ export async function getAthletes(coachId: string): Promise<AthleteWithPriority[
       else severity = 'red'
     }
 
+    const upcoming_race =
+      raceEntries
+        ?.filter(e => e.athlete_id === athlete.id && e.races)
+        .map(e => e.races as unknown as Race)
+        .sort((a, b) => a.date.localeCompare(b.date))[0] ?? null
+
     return {
       ...athlete,
       days_since_last_contact: daysSince,
       severity,
       is_new_athlete: isNew,
-      upcoming_race: upcomingRaceMap.get(athlete.id) ?? null,
+      upcoming_race,
     }
   })
 
@@ -165,59 +166,121 @@ export async function archiveAthlete(athleteId: string): Promise<Athlete> {
   return data as Athlete
 }
 
-// ── Athlete Races (query) ──
-
-export async function getAthleteRaces(athleteId: string): Promise<AthleteRace[]> {
-  const now = new Date()
-  const { data, error } = await supabase
-    .from('athlete_races')
-    .select('*')
-    .eq('athlete_id', athleteId)
-    .gte('race_date', now.toISOString().split('T')[0])
-    .order('race_date', { ascending: true })
-
-  if (error) throw error
-  return (data ?? []) as AthleteRace[]
-}
-
 // ── Races ──
 
-export async function createRace(
+// Get all races for a coach, with their enrolled athletes
+// Used for race feed, race pages, and calendar
+export async function getRaces(coachId: string): Promise<RaceWithAthletes[]> {
+  const { data, error } = await supabase
+    .from('races')
+    .select(`
+      *,
+      athlete_race_entries (
+        athlete_id,
+        athletes (*)
+      )
+    `)
+    .eq('coach_id', coachId)
+    .gte('date', new Date().toISOString().split('T')[0])
+    .order('date', { ascending: true })
+
+  if (error) throw error
+
+  return (data ?? []).map(race => ({
+    ...race,
+    athletes: race.athlete_race_entries.map((e: any) => e.athletes)
+  }))
+}
+
+// Get all races for a single athlete
+export async function getAthleteRaces(athleteId: string): Promise<Race[]> {
+  const { data, error } = await supabase
+    .from('athlete_race_entries')
+    .select('races(*)')
+    .eq('athlete_id', athleteId)
+    .gte('races.date', new Date().toISOString().split('T')[0])
+    .order('races(date)', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []).map((e: any) => e.races).filter(Boolean)
+}
+
+// Create a race (or find existing) and enroll an athlete
+export async function enrollAthleteInRace(
+  coachId: string,
   athleteId: string,
-  data: Pick<AthleteRace, 'race_name' | 'race_date'>
-): Promise<AthleteRace> {
-  const { data: race, error } = await supabase
-    .from('athlete_races')
-    .insert({ athlete_id: athleteId, ...data })
+  raceName: string,
+  raceDate: string,
+  options?: { location?: string; distance?: string }
+): Promise<Race> {
+  // Upsert the race
+  const { data: race, error: raceError } = await supabase
+    .from('races')
+    .upsert(
+      { coach_id: coachId, name: raceName, date: raceDate, ...options },
+      { onConflict: 'coach_id,name,date' }
+    )
     .select()
     .single()
 
-  if (error) throw error
-  return race as AthleteRace
+  if (raceError) throw raceError
+
+  // Enroll the athlete
+  const { error: entryError } = await supabase
+    .from('athlete_race_entries')
+    .upsert(
+      { athlete_id: athleteId, race_id: race.id },
+      { onConflict: 'athlete_id,race_id' }
+    )
+
+  if (entryError) throw entryError
+  return race
 }
 
-export async function updateRace(
-  raceId: string,
-  data: Partial<Pick<AthleteRace, 'race_name' | 'race_date'>>
-): Promise<AthleteRace> {
-  const { data: race, error } = await supabase
-    .from('athlete_races')
-    .update(data)
-    .eq('id', raceId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return race as AthleteRace
-}
-
-export async function deleteRace(raceId: string): Promise<void> {
+// Remove an athlete from a race
+export async function removeAthleteFromRace(
+  athleteId: string,
+  raceId: string
+): Promise<void> {
   const { error } = await supabase
-    .from('athlete_races')
+    .from('athlete_race_entries')
     .delete()
-    .eq('id', raceId)
+    .eq('athlete_id', athleteId)
+    .eq('race_id', raceId)
 
   if (error) throw error
+}
+
+// Get races for a coach within the next N days (default 30)
+export async function getUpcomingRaces(
+  coachId: string,
+  days: number = 30
+): Promise<RaceWithAthletes[]> {
+  const today = new Date().toISOString().split('T')[0]
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() + days)
+  const cutoffStr = cutoff.toISOString().split('T')[0]
+
+  const { data, error } = await supabase
+    .from('races')
+    .select(`
+      *,
+      athlete_race_entries (
+        athlete_id,
+        athletes (*)
+      )
+    `)
+    .eq('coach_id', coachId)
+    .gte('date', today)
+    .lte('date', cutoffStr)
+    .order('date', { ascending: true })
+
+  if (error) throw error
+
+  return (data ?? []).map(race => ({
+    ...race,
+    athletes: race.athlete_race_entries.map((e: any) => e.athletes)
+  }))
 }
 
 // ── Contact Logs ──

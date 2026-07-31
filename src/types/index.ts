@@ -17,12 +17,31 @@ export interface Athlete {
   created_at: string
 }
 
-export interface AthleteRace {
+export interface Race {
+  id: string
+  coach_id: string
+  name: string
+  date: string        // DATE — 'YYYY-MM-DD'
+  location: string | null
+  distance: string | null
+  created_at: string
+}
+
+export interface AthleteRaceEntry {
   id: string
   athlete_id: string
-  race_name: string
-  race_date: string
+  race_id: string
   created_at: string
+}
+
+// Used when displaying a race with its athlete list
+export interface RaceWithAthletes extends Race {
+  athletes: Athlete[]
+}
+
+// Used when displaying an athlete with their races
+export interface AthleteWithRaces extends Athlete {
+  races: Race[]
 }
 
 export interface ContactLog {
@@ -39,5 +58,5 @@ export interface AthleteWithPriority extends Athlete {
   days_since_last_contact: number
   severity: 'green' | 'yellow' | 'red'
   is_new_athlete: boolean
-  upcoming_race: AthleteRace | null
+  upcoming_race: Race | null   // nearest future race, any horizon
 }

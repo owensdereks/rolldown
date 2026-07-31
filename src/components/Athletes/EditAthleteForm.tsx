@@ -3,12 +3,12 @@ import {
   getAthlete,
   getAthleteRaces,
   updateAthlete,
-  createRace,
-  updateRace,
-  deleteRace,
+  enrollAthleteInRace,
+  removeAthleteFromRace,
   archiveAthlete,
 } from '../../services/api'
-import type { AthleteRace } from '../../types'
+import type { Race } from '../../types'
+import { useAuth } from '../../contexts/AuthContext'
 import Button from '../ui/Button'
 import { Input, Textarea } from '../ui/Input'
 import Modal from '../ui/Modal'
@@ -31,19 +31,23 @@ export default function EditAthleteForm({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showArchiveModal, setShowArchiveModal] = useState(false)
 
+  const { user } = useAuth()
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [coachingStartDate, setCoachingStartDate] = useState('')
-  const [raceName, setRaceName] = useState('')
-  const [raceDate, setRaceDate] = useState('')
   const [notes, setNotes] = useState('')
-  const [existingRace, setExistingRace] = useState<AthleteRace | null>(null)
+
+  const [races, setRaces] = useState<Race[]>([])
+  const [newRaceName, setNewRaceName] = useState('')
+  const [newRaceDate, setNewRaceDate] = useState('')
+  const [raceError, setRaceError] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [athlete, races] = await Promise.all([
+        const [athlete, raceList] = await Promise.all([
           getAthlete(athleteId),
           getAthleteRaces(athleteId),
         ])
@@ -52,16 +56,10 @@ export default function EditAthleteForm({
         setPhone(athlete.phone ?? '')
         setCoachingStartDate(athlete.coaching_start_date)
         setNotes(athlete.notes ?? '')
-
-        if (races.length > 0) {
-          setExistingRace(races[0])
-          setRaceName(races[0].race_name)
-          setRaceDate(races[0].race_date)
-        }
+        setRaces(raceList)
       } catch (err) {
         setErrors({
-          form:
-            err instanceof Error ? err.message : 'Failed to load athlete',
+          form: err instanceof Error ? err.message : 'Failed to load athlete',
         })
       } finally {
         setLoading(false)
@@ -72,26 +70,44 @@ export default function EditAthleteForm({
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}
-
     if (!name.trim()) {
       newErrors.name = 'Name is required'
     }
-
-    const hasRaceName = raceName.trim().length > 0
-    const hasRaceDate = raceDate.length > 0
-    if (hasRaceName !== hasRaceDate) {
-      newErrors.race = 'Please provide both race name and date'
-    }
-
-    if (hasRaceDate) {
-      const today = new Date().toISOString().split('T')[0]
-      if (raceDate <= today) {
-        newErrors.raceDate = 'Race date must be in the future'
-      }
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  const handleAddRace = async () => {
+    setRaceError(null)
+    if (!newRaceName.trim() || !newRaceDate) {
+      setRaceError('Both race name and date are required')
+      return
+    }
+    const today = new Date().toISOString().split('T')[0]
+    if (newRaceDate <= today) {
+      setRaceError('Race date must be in the future')
+      return
+    }
+    if (!user) return
+    try {
+      await enrollAthleteInRace(user.id, athleteId, newRaceName.trim(), newRaceDate)
+      const updated = await getAthleteRaces(athleteId)
+      setRaces(updated)
+      setNewRaceName('')
+      setNewRaceDate('')
+    } catch (err) {
+      setRaceError(err instanceof Error ? err.message : 'Failed to add race')
+    }
+  }
+
+  const handleRemoveRace = async (race: Race) => {
+    try {
+      await removeAthleteFromRace(athleteId, race.id)
+      const updated = await getAthleteRaces(athleteId)
+      setRaces(updated)
+    } catch (err) {
+      setErrors({ form: err instanceof Error ? err.message : 'Failed to remove race' })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,27 +123,10 @@ export default function EditAthleteForm({
         coaching_start_date: coachingStartDate,
         notes: notes.trim() || null,
       })
-
-      const hasRace = raceName.trim() && raceDate
-      if (hasRace && !existingRace) {
-        await createRace(athleteId, {
-          race_name: raceName.trim(),
-          race_date: raceDate,
-        })
-      } else if (hasRace && existingRace) {
-        await updateRace(existingRace.id, {
-          race_name: raceName.trim(),
-          race_date: raceDate,
-        })
-      } else if (!hasRace && existingRace) {
-        await deleteRace(existingRace.id)
-      }
-
       onSave()
     } catch (err) {
       setErrors({
-        form:
-          err instanceof Error ? err.message : 'Failed to save changes',
+        form: err instanceof Error ? err.message : 'Failed to save changes',
       })
     } finally {
       setSaving(false)
@@ -140,10 +139,7 @@ export default function EditAthleteForm({
       onArchive()
     } catch (err) {
       setErrors({
-        form:
-          err instanceof Error
-            ? err.message
-            : 'Failed to archive athlete',
+        form: err instanceof Error ? err.message : 'Failed to archive athlete',
       })
       setShowArchiveModal(false)
     }
@@ -151,17 +147,30 @@ export default function EditAthleteForm({
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto py-12 text-center">
-        <p className="text-sm text-slate-500">Loading athlete...</p>
+      <div className="max-w-2xl mx-auto py-12">
+        <div className="space-y-4 animate-pulse">
+          <div className="h-8 w-48 bg-surface rounded-md" />
+          <div className="h-10 w-full bg-surface rounded-lg" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-10 bg-surface rounded-lg" />
+            <div className="h-10 bg-surface rounded-lg" />
+          </div>
+          <div className="h-10 bg-surface rounded-lg" />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-lg font-semibold text-slate-800 mb-6">
-        Edit Athlete
-      </h2>
+      <div className="mb-6">
+        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
+          Edit Athlete
+        </p>
+        <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
+          {name || 'Edit Athlete'}
+        </h2>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="name"
@@ -200,28 +209,64 @@ export default function EditAthleteForm({
           onChange={(e) => setCoachingStartDate(e.target.value)}
         />
 
-        <div className="border-t border-slate-200 pt-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">
-            Upcoming Race
+        <div className="border-t border-border pt-4">
+          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-3">
+            Races
           </p>
+          {races.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {races.map((race) => (
+                <div
+                  key={race.id}
+                  className="flex items-center justify-between bg-elevated border border-border rounded-lg px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm text-ink">{race.name}</p>
+                    <p className="font-mono text-[10px] text-ink-muted mt-0.5">
+                      {new Date(race.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveRace(race)}
+                    className="font-mono text-[10px] text-ink-muted hover:text-signal-red uppercase tracking-widest transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Input
-              id="race-name"
+              id="new-race-name"
               label="Race Name"
-              value={raceName}
-              onChange={(e) => setRaceName(e.target.value)}
+              value={newRaceName}
+              onChange={(e) => setNewRaceName(e.target.value)}
               placeholder="e.g., Boston Marathon"
-              error={errors.race}
             />
             <Input
-              id="race-date"
+              id="new-race-date"
               label="Race Date"
               type="date"
-              value={raceDate}
-              onChange={(e) => setRaceDate(e.target.value)}
-              error={errors.raceDate}
+              value={newRaceDate}
+              onChange={(e) => setNewRaceDate(e.target.value)}
             />
           </div>
+          {raceError && (
+            <p className="font-mono text-[10px] text-signal-red mt-1">{raceError}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleAddRace}
+            className="mt-2 font-mono text-[10px] text-accent hover:text-accent/80 uppercase tracking-widest transition-colors"
+          >
+            + Add Race
+          </button>
         </div>
 
         <div>
@@ -235,13 +280,13 @@ export default function EditAthleteForm({
             placeholder="Any notes about this athlete..."
             rows={3}
           />
-          <p className="mt-1 text-xs text-slate-400 text-right">
+          <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
             {notes.length}/2000
           </p>
         </div>
 
         {errors.form && (
-          <p className="text-sm text-red-500">{errors.form}</p>
+          <p className="font-mono text-[10px] text-signal-red">{errors.form}</p>
         )}
 
         <div className="flex items-center gap-3 pt-2">
@@ -253,7 +298,7 @@ export default function EditAthleteForm({
           </Button>
         </div>
 
-        <div className="border-t border-slate-200 pt-4 mt-6">
+        <div className="border-t border-border pt-4 mt-6">
           <Button
             variant="danger"
             type="button"
@@ -264,24 +309,23 @@ export default function EditAthleteForm({
         </div>
       </form>
 
-      <Modal
-        open={showArchiveModal}
-        onClose={() => setShowArchiveModal(false)}
-      >
-        <h3 className="text-lg font-semibold text-slate-800 mb-2">
-          Archive {name}?
-        </h3>
-        <p className="text-sm text-slate-600 mb-6">
+      <Modal open={showArchiveModal} onClose={() => setShowArchiveModal(false)}>
+        <div className="mb-4">
+          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
+            Confirm Archive
+          </p>
+          <h3 className="font-display font-black text-2xl text-ink uppercase tracking-wide">
+            Archive {name}?
+          </h3>
+        </div>
+        <p className="text-sm text-ink-dim mb-6 leading-relaxed">
           They'll be removed from your priority list.
         </p>
         <div className="flex items-center gap-3">
           <Button variant="danger" onClick={handleArchive}>
             Archive
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setShowArchiveModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowArchiveModal(false)}>
             Cancel
           </Button>
         </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { createAthlete, createRace } from '../../services/api'
+import { createAthlete, enrollAthleteInRace } from '../../services/api'
 import Button from '../ui/Button'
 import { Input, Textarea } from '../ui/Input'
 
@@ -67,17 +67,13 @@ export default function AddAthleteForm({
       })
 
       if (raceName.trim() && raceDate) {
-        await createRace(athlete.id, {
-          race_name: raceName.trim(),
-          race_date: raceDate,
-        })
+        await enrollAthleteInRace(user.id, athlete.id, raceName.trim(), raceDate)
       }
 
       onSave()
     } catch (err) {
       setErrors({
-        form:
-          err instanceof Error ? err.message : 'Failed to save athlete',
+        form: err instanceof Error ? err.message : 'Failed to save athlete',
       })
     } finally {
       setSaving(false)
@@ -86,9 +82,14 @@ export default function AddAthleteForm({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-lg font-semibold text-slate-800 mb-6">
-        Add Athlete
-      </h2>
+      <div className="mb-6">
+        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
+          New Athlete
+        </p>
+        <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
+          Add Athlete
+        </h2>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="name"
@@ -127,8 +128,8 @@ export default function AddAthleteForm({
           onChange={(e) => setCoachingStartDate(e.target.value)}
         />
 
-        <div className="border-t border-slate-200 pt-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">
+        <div className="border-t border-border pt-4">
+          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-3">
             Upcoming Race
           </p>
           <div className="grid grid-cols-2 gap-4">
@@ -162,13 +163,13 @@ export default function AddAthleteForm({
             placeholder="Any notes about this athlete..."
             rows={3}
           />
-          <p className="mt-1 text-xs text-slate-400 text-right">
+          <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
             {notes.length}/2000
           </p>
         </div>
 
         {errors.form && (
-          <p className="text-sm text-red-500">{errors.form}</p>
+          <p className="font-mono text-[10px] text-signal-red">{errors.form}</p>
         )}
 
         <div className="flex items-center gap-3 pt-2">

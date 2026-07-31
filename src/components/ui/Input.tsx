@@ -22,17 +22,19 @@ export function Input({
       {label && (
         <label
           htmlFor={id}
-          className="block text-xs text-slate-500 uppercase tracking-wide font-medium mb-1"
+          className="block font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1.5"
         >
           {label}
         </label>
       )}
       <input
         id={id}
-        className={`w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${error ? 'border-red-300' : ''} ${className}`}
+        className={`w-full bg-elevated border rounded-lg px-3 py-2 text-sm text-ink placeholder-ink-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors ${
+          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-border hover:border-ink-muted/50'
+        } ${className}`}
         {...props}
       />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-1.5 font-mono text-[10px] text-signal-red">{error}</p>}
     </div>
   )
 }
@@ -49,17 +51,19 @@ export function Textarea({
       {label && (
         <label
           htmlFor={id}
-          className="block text-xs text-slate-500 uppercase tracking-wide font-medium mb-1"
+          className="block font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1.5"
         >
           {label}
         </label>
       )}
       <textarea
         id={id}
-        className={`w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${error ? 'border-red-300' : ''} ${className}`}
+        className={`w-full bg-elevated border rounded-lg px-3 py-2 text-sm text-ink placeholder-ink-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors resize-none ${
+          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-border hover:border-ink-muted/50'
+        } ${className}`}
         {...props}
       />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-1.5 font-mono text-[10px] text-signal-red">{error}</p>}
     </div>
   )
 }

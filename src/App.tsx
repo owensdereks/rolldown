@@ -1,24 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
-import { getAthletes, getCoach } from './services/api'
-import type { AthleteWithPriority, Coach } from './types'
+import { getAthletes, getCoach, getUpcomingRaces } from './services/api'
+import type { AthleteWithPriority, Coach, RaceWithAthletes } from './types'
 import LoginPage from './components/Auth/LoginPage'
 import AppShell from './components/Layout/AppShell'
 import AddAthleteForm from './components/Athletes/AddAthleteForm'
 import EditAthleteForm from './components/Athletes/EditAthleteForm'
 import CSVImport from './components/Athletes/CSVImport'
 import PriorityList from './components/Dashboard/PriorityList'
+import RaceDetailPage from './components/Races/RaceDetailPage'
+import RaceCalendar from './components/Races/RaceCalendar'
 
 type View =
   | { page: 'main' }
   | { page: 'add-athlete' }
   | { page: 'edit-athlete'; athleteId: string }
   | { page: 'csv-import' }
+  | { page: 'race-detail'; raceId: string }
+  | { page: 'race-calendar' }
 
 function AuthenticatedApp() {
   const { user, signOut } = useAuth()
   const [view, setView] = useState<View>({ page: 'main' })
   const [athletes, setAthletes] = useState<AthleteWithPriority[]>([])
+  const [upcomingRaces, setUpcomingRaces] = useState<RaceWithAthletes[]>([])
   const [coach, setCoach] = useState<Coach | null>(null)
   const [loadingData, setLoadingData] = useState(true)
 
@@ -26,12 +31,14 @@ function AuthenticatedApp() {
     if (!user) return
     const load = async () => {
       try {
-        const [coachData, athleteData] = await Promise.all([
+        const [coachData, athleteData, racesData] = await Promise.all([
           getCoach(),
           getAthletes(user.id),
+          getUpcomingRaces(user.id),
         ])
         setCoach(coachData)
         setAthletes(athleteData)
+        setUpcomingRaces(racesData)
       } catch (err) {
         console.error('Failed to load data:', err)
       } finally {
@@ -41,11 +48,25 @@ function AuthenticatedApp() {
     load()
   }, [user])
 
+  const refreshUpcomingRaces = async () => {
+    if (!coach) return
+    try {
+      const races = await getUpcomingRaces(coach.id)
+      setUpcomingRaces(races)
+    } catch (err) {
+      console.error('Failed to refresh upcoming races:', err)
+    }
+  }
+
   const refreshAthletes = async () => {
     if (!user) return
     try {
-      const data = await getAthletes(user.id)
-      setAthletes(data)
+      const [athleteData, racesData] = await Promise.all([
+        getAthletes(user.id),
+        getUpcomingRaces(user.id),
+      ])
+      setAthletes(athleteData)
+      setUpcomingRaces(racesData)
     } catch (err) {
       console.error('Failed to refresh athletes:', err)
     }
@@ -60,6 +81,7 @@ function AuthenticatedApp() {
     <AppShell
       coachName={coach?.name ?? user?.email ?? ''}
       onLogout={signOut}
+      onViewCalendar={() => setView({ page: 'race-calendar' })}
     >
       {view.page === 'main' && (
         <PriorityList
@@ -70,6 +92,8 @@ function AuthenticatedApp() {
           onImportCSV={() => setView({ page: 'csv-import' })}
           onEditAthlete={(id) => setView({ page: 'edit-athlete', athleteId: id })}
           onRefresh={refreshAthletes}
+          upcomingRaces={upcomingRaces}
+          onViewRace={(raceId) => setView({ page: 'race-detail', raceId })}
         />
       )}
 
@@ -93,6 +117,24 @@ function AuthenticatedApp() {
         <CSVImport
           onCancel={() => setView({ page: 'main' })}
           onDone={handleSaved}
+        />
+      )}
+
+      {view.page === 'race-detail' && (
+        <RaceDetailPage
+          raceId={view.raceId}
+          coachId={user!.id}
+          allAthletes={athletes}
+          onBack={() => setView({ page: 'main' })}
+          onRosterChanged={refreshUpcomingRaces}
+        />
+      )}
+
+      {view.page === 'race-calendar' && (
+        <RaceCalendar
+          coachId={user!.id}
+          onViewRace={(raceId) => setView({ page: 'race-detail', raceId })}
+          onBack={() => setView({ page: 'main' })}
         />
       )}
     </AppShell>

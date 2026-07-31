@@ -21,6 +21,13 @@ const CONTACT_TYPE_LABELS: Record<ContactLog['contact_type'], string> = {
   other: 'Other',
 }
 
+const CONTACT_TYPE_ICONS: Record<ContactLog['contact_type'], string> = {
+  text: '💬',
+  email: '✉️',
+  call: '📞',
+  other: '···',
+}
+
 const MAX_NOTES = 500
 
 export default function LogContactModal({
@@ -52,34 +59,42 @@ export default function LogContactModal({
 
   return (
     <Modal open onClose={onClose}>
-      <h3 className="text-lg font-semibold text-slate-800 mb-4">
-        Log Contact with {athlete.name}
-      </h3>
-
-      {/* Contact type pills */}
-      <div className="mb-4">
-        <p className="block text-xs text-slate-500 uppercase tracking-wide font-medium mb-2">
-          Contact Type
+      <div className="mb-5">
+        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
+          Log Contact
         </p>
-        <div className="flex gap-2">
+        <h3 className="font-display font-black text-2xl text-ink uppercase tracking-wide">
+          {athlete.name}
+        </h3>
+      </div>
+
+      {/* Contact type */}
+      <div className="mb-5">
+        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-2.5">
+          Method
+        </p>
+        <div className="grid grid-cols-4 gap-2">
           {CONTACT_TYPES.map((type) => (
             <button
               key={type}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`py-3 rounded-xl text-xs font-medium transition-all duration-150 flex flex-col items-center gap-1.5 ${
                 contactType === type
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-accent/15 text-accent border border-accent/30'
+                  : 'bg-surface border border-border text-ink-dim hover:border-white/15 hover:text-ink'
               }`}
               onClick={() => setContactType(type)}
             >
-              {CONTACT_TYPE_LABELS[type]}
+              <span className="text-base leading-none">{CONTACT_TYPE_ICONS[type]}</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest">
+                {CONTACT_TYPE_LABELS[type]}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Notes */}
-      <div className="mb-6">
+      <div className="mb-5">
         <Textarea
           label="Notes"
           id="contact-notes"
@@ -89,12 +104,11 @@ export default function LogContactModal({
           maxLength={MAX_NOTES}
           onChange={(e) => setNotes(e.target.value)}
         />
-        <p className="text-xs text-slate-400 text-right mt-1">
+        <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
           {notes.length}/{MAX_NOTES}
         </p>
       </div>
 
-      {/* Footer */}
       <div className="flex justify-end gap-3">
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Cancel

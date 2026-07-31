@@ -14,19 +14,20 @@ export default function Modal({ open, onClose, children }: ModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
       <div
-        className="relative bg-white rounded-lg p-6 max-w-md w-full mx-4"
+        className="relative bg-elevated border border-border rounded-2xl p-6 max-w-md w-full mx-4"
+        style={{ boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+          className="absolute top-4 right-4 text-ink-muted hover:text-ink transition-colors"
           aria-label="Close"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
+            className="h-4 w-4"
             viewBox="0 0 20 20"
             fill="currentColor"
           >

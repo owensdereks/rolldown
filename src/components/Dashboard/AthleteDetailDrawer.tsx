@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { Athlete, AthleteRace, AthleteWithPriority, ContactLog } from '../../types'
-import { getAthlete, getContactLogs, getAthleteRaces, updateAthlete } from '../../services/api'
+import type { Athlete, Race, AthleteWithPriority, ContactLog } from '../../types'
+import { getAthlete, getContactLogs, getAthleteRaces, updateAthlete, removeAthleteFromRace } from '../../services/api'
 import Badge from '../ui/Badge'
 import Button from '../ui/Button'
 import { Textarea } from '../ui/Input'
@@ -17,10 +17,10 @@ interface AthleteDetailDrawerProps {
 }
 
 const CONTACT_TYPE_COLORS: Record<ContactLog['contact_type'], string> = {
-  text: 'bg-blue-400',
-  email: 'bg-purple-400',
-  call: 'bg-emerald-400',
-  other: 'bg-slate-400',
+  text: 'bg-accent',
+  email: 'bg-signal-purple',
+  call: 'bg-signal-green',
+  other: 'bg-ink-muted',
 }
 
 const CONTACT_TYPE_LABELS: Record<ContactLog['contact_type'], string> = {
@@ -44,7 +44,7 @@ function formatRelativeDate(dateStr: string): string {
 
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 14) return `${diffDays} days ago`
+  if (diffDays < 14) return `${diffDays}d ago`
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
@@ -63,7 +63,7 @@ export default function AthleteDetailDrawer({
 }: AthleteDetailDrawerProps) {
   const [athleteData, setAthleteData] = useState<Athlete | null>(null)
   const [contactLogs, setContactLogs] = useState<ContactLog[]>([])
-  const [races, setRaces] = useState<AthleteRace[]>([])
+  const [races, setRaces] = useState<Race[]>([])
   const [loading, setLoading] = useState(true)
   const [notes, setNotes] = useState('')
   const [savedNotice, setSavedNotice] = useState(false)
@@ -179,8 +179,16 @@ export default function AthleteDetailDrawer({
 
   const handleContactSaved = async () => {
     setContactModalOpen(false)
-    // Refresh both drawer data and priority list
     await Promise.all([loadData(), onRefresh()])
+  }
+
+  const handleRemoveRace = async (raceId: string) => {
+    try {
+      await removeAthleteFromRace(athleteId, raceId)
+      await loadData()
+    } catch (err) {
+      console.error('Failed to remove race:', err)
+    }
   }
 
   const toggleLogExpand = (logId: string) => {
@@ -204,16 +212,16 @@ export default function AthleteDetailDrawer({
     }
   })()
 
-  // Race badge (within 14 days)
+  // Race badge
   const raceBadge = (() => {
     if (!priorityAthlete.upcoming_race) return null
     const daysAway = Math.ceil(
-      (new Date(priorityAthlete.upcoming_race.race_date).getTime() - new Date().getTime()) /
+      (new Date(priorityAthlete.upcoming_race.date).getTime() - new Date().getTime()) /
         (1000 * 60 * 60 * 24)
     )
     return (
       <Badge variant="race">
-        {priorityAthlete.upcoming_race.race_name} — in {daysAway} day{daysAway !== 1 ? 's' : ''}
+        {priorityAthlete.upcoming_race.name} — {daysAway}d
       </Badge>
     )
   })()
@@ -229,21 +237,14 @@ export default function AthleteDetailDrawer({
   const displayedLogs = showAllLogs ? contactLogs : contactLogs.slice(0, INITIAL_LOG_COUNT)
   const hasMoreLogs = contactLogs.length > INITIAL_LOG_COUNT
 
-  // Find the nearest upcoming race for this athlete (from full race data, not just 14-day window)
-  const nextRace = races.length > 0 ? races[0] : null
-  const nextRaceDaysAway = nextRace
-    ? Math.ceil(
-        (new Date(nextRace.race_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-      )
-    : null
-
   return (
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0'
         }`}
+        style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
         onClick={handleClose}
       />
 
@@ -253,25 +254,30 @@ export default function AthleteDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={`Details for ${priorityAthlete.name}`}
-        className={`fixed inset-y-0 right-0 z-40 w-full sm:max-w-md bg-white shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-40 w-full sm:max-w-md flex flex-col transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
+        style={{
+          backgroundColor: '#0D1117',
+          borderLeft: '1px solid #1E2A3A',
+          boxShadow: '-20px 0 60px rgba(0,0,0,0.7)',
+        }}
       >
         {/* Header */}
-        <div className="border-b border-slate-200 px-6 py-4 shrink-0">
+        <div className="border-b border-border px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-slate-800 truncate">
+              <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide truncate">
                 {priorityAthlete.name}
               </h2>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 {severityBadge}
                 {raceBadge}
               </div>
             </div>
             <button
               onClick={handleClose}
-              className="text-slate-400 hover:text-slate-600 transition-colors ml-4 shrink-0"
+              className="text-ink-muted hover:text-ink transition-colors ml-4 shrink-0 mt-1"
               aria-label="Close drawer"
             >
               <svg
@@ -291,89 +297,106 @@ export default function AthleteDetailDrawer({
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
           {loading ? (
             <div className="space-y-4 animate-pulse">
-              <div className="h-4 w-48 bg-slate-200 rounded" />
-              <div className="h-4 w-32 bg-slate-200 rounded" />
-              <div className="h-20 bg-slate-100 rounded" />
-              <div className="h-4 w-40 bg-slate-200 rounded" />
-              <div className="h-32 bg-slate-100 rounded" />
+              <div className="h-4 w-48 bg-elevated rounded" />
+              <div className="h-4 w-32 bg-elevated rounded" />
+              <div className="h-20 bg-elevated rounded-lg" />
+              <div className="h-4 w-40 bg-elevated rounded" />
+              <div className="h-32 bg-elevated rounded-lg" />
             </div>
           ) : (
             <>
-              {/* Quick Info */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+              {/* Quick Info Grid */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
+                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
                       Email
                     </p>
-                    <p className="text-sm text-slate-600">
-                      {athleteData?.email || '—'}
-                    </p>
+                    <p className="text-sm text-ink-dim truncate">{athleteData?.email || '—'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
+                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
                       Phone
                     </p>
-                    <p className="text-sm text-slate-600">
-                      {athleteData?.phone || '—'}
-                    </p>
+                    <p className="text-sm text-ink-dim">{athleteData?.phone || '—'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
-                      Coaching since
+                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
+                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
+                      Coaching Since
                     </p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-ink-dim">
                       {athleteData ? formatCoachingSince(athleteData.coaching_start_date) : '—'}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
+                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
                       Tenure
                     </p>
-                    <p className="text-sm text-slate-600">
-                      {tenureDays <= 90 ? (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-                          New Athlete
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                          Tenured
-                        </span>
-                      )}
-                    </p>
+                    {tenureDays <= 90 ? (
+                      <span className="inline-flex items-center rounded-full bg-accent/10 border border-accent/20 px-2 py-0.5 font-mono text-[9px] font-medium text-accent uppercase tracking-widest">
+                        New
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-ink-muted/20 border border-ink-muted/30 px-2 py-0.5 font-mono text-[9px] font-medium text-ink-dim uppercase tracking-widest">
+                        Tenured
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Race info */}
-                {nextRace && nextRaceDaysAway !== null && (
-                  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                    <p className="text-xs text-blue-500 uppercase tracking-wide font-medium">
-                      Upcoming Race
+                {/* Races list */}
+                {races.length > 0 && (
+                  <div>
+                    <p className="font-mono text-[9px] text-signal-purple/70 uppercase tracking-widest mb-2">
+                      Races
                     </p>
-                    <p className="text-sm font-medium text-blue-800">{nextRace.race_name}</p>
-                    <p className="text-xs text-blue-600">
-                      {new Date(nextRace.race_date).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}{' '}
-                      — {nextRaceDaysAway} day{nextRaceDaysAway !== 1 ? 's' : ''} away
-                    </p>
+                    <div className="space-y-2">
+                      {races.map((race) => {
+                        const daysAway = Math.ceil(
+                          (new Date(race.date).getTime() - new Date().getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                        return (
+                          <div
+                            key={race.id}
+                            className="bg-signal-purple/5 border border-signal-purple/20 rounded-lg px-4 py-3 flex items-start justify-between gap-3"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-ink">{race.name}</p>
+                              <p className="font-mono text-xs text-signal-purple mt-0.5">
+                                {new Date(race.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}{' '}
+                                — in {daysAway} days
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveRace(race.id)}
+                              className="font-mono text-[10px] text-ink-muted hover:text-signal-red uppercase tracking-widest transition-colors shrink-0"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Persistent Notes */}
+              {/* Notes */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+                  <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
                     Notes
                   </p>
                   {savedNotice && (
-                    <span className="text-xs text-emerald-600 font-medium animate-pulse">
+                    <span className="font-mono text-[10px] text-signal-green uppercase tracking-widest">
                       Saved
                     </span>
                   )}
@@ -387,65 +410,66 @@ export default function AthleteDetailDrawer({
                   onChange={(e) => setNotes(e.target.value)}
                   onBlur={handleNotesSave}
                 />
-                <p className="text-xs text-slate-400 text-right mt-1">
+                <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
                   {notes.length}/{MAX_NOTES}
                 </p>
               </div>
 
               {/* Contact History */}
               <div>
-                <p className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-3">
+                <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-3">
                   Contact History
                 </p>
 
                 {contactLogs.length === 0 ? (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="bg-surface border border-border rounded-xl">
                     <EmptyState
-                      heading="No contacts logged yet"
+                      heading="No Contacts Yet"
                       description="Log your first contact with this athlete to start tracking communication."
                       actionLabel="Log Contact"
                       onAction={() => setContactModalOpen(true)}
                     />
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {displayedLogs.map((log) => {
                       const isExpanded = expandedLogIds.has(log.id)
                       return (
                         <div
                           key={log.id}
-                          className="flex items-start gap-3 py-2 border-b border-slate-100 last:border-0"
+                          className="flex items-start gap-3 py-3 border-b border-border/50 last:border-0"
                         >
                           {/* Type indicator */}
-                          <div className="flex flex-col items-center pt-1 shrink-0">
+                          <div className="flex flex-col items-center pt-1.5 shrink-0">
                             <div
-                              className={`w-2.5 h-2.5 rounded-full ${CONTACT_TYPE_COLORS[log.contact_type]}`}
+                              className={`w-2 h-2 rounded-full ${CONTACT_TYPE_COLORS[log.contact_type]}`}
                             />
                           </div>
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-slate-700">
+                            <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
                               {CONTACT_TYPE_LABELS[log.contact_type]}
                             </p>
                             {log.notes ? (
                               <p
-                                className={`text-sm text-slate-600 mt-0.5 ${
+                                className={`text-sm text-ink-dim mt-0.5 leading-relaxed ${
                                   !isExpanded ? 'line-clamp-2' : ''
                                 } ${log.notes.length > 80 ? 'cursor-pointer' : ''}`}
                                 onClick={() => {
-                                  if (log.notes && log.notes.length > 80) toggleLogExpand(log.id)
+                                  if (log.notes && log.notes.length > 80)
+                                    toggleLogExpand(log.id)
                                 }}
                               >
                                 {log.notes}
                               </p>
                             ) : (
-                              <p className="text-xs text-slate-400 italic mt-0.5">No notes</p>
+                              <p className="text-xs text-ink-muted italic mt-0.5">No notes</p>
                             )}
                           </div>
 
                           {/* Date */}
-                          <p className="text-xs text-slate-400 shrink-0 pt-0.5">
+                          <p className="font-mono text-[10px] text-ink-muted shrink-0 pt-0.5 uppercase tracking-widest">
                             {formatRelativeDate(log.contacted_at)}
                           </p>
                         </div>
@@ -454,7 +478,7 @@ export default function AthleteDetailDrawer({
 
                     {hasMoreLogs && !showAllLogs && (
                       <button
-                        className="w-full text-center text-xs text-blue-600 hover:text-blue-700 font-medium py-2 transition-colors"
+                        className="w-full text-center font-mono text-[10px] text-accent hover:text-accent/80 uppercase tracking-widest py-2.5 transition-colors"
                         onClick={() => setShowAllLogs(true)}
                       >
                         Show more ({contactLogs.length - INITIAL_LOG_COUNT} remaining)
@@ -467,16 +491,19 @@ export default function AthleteDetailDrawer({
           )}
         </div>
 
-        {/* Action Bar (sticky bottom) */}
-        <div className="border-t border-slate-200 px-6 py-4 shrink-0 bg-white">
+        {/* Action Bar */}
+        <div
+          className="border-t border-border px-6 py-4 shrink-0"
+          style={{ backgroundColor: '#0D1117' }}
+        >
           <Button
-            className="w-full"
+            className="w-full justify-center py-2.5"
             onClick={() => setContactModalOpen(true)}
           >
             Log Contact
           </Button>
           <button
-            className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium mt-2 transition-colors"
+            className="w-full text-center font-mono text-[11px] text-ink-dim hover:text-ink uppercase tracking-widest font-medium mt-3 transition-colors"
             onClick={() => onEditAthlete(athleteId)}
           >
             Edit Athlete

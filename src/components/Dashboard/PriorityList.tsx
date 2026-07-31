@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AthleteWithPriority } from '../../types'
+import type { AthleteWithPriority, RaceWithAthletes } from '../../types'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import EmptyState from '../ui/EmptyState'
@@ -15,20 +15,28 @@ interface PriorityListProps {
   onImportCSV: () => void
   onEditAthlete: (athleteId: string) => void
   onRefresh: () => Promise<void>
+  upcomingRaces: RaceWithAthletes[]
+  onViewRace: (raceId: string) => void
 }
 
 type FilterMode = 'needs-attention' | 'all'
 
-const severityColor = {
-  red: 'bg-red-500',
-  yellow: 'bg-amber-500',
-  green: 'bg-emerald-500',
-}
-
-const severityTextColor = {
-  red: 'text-red-500',
-  yellow: 'text-amber-600',
-  green: 'text-emerald-500',
+const severityConfig = {
+  red: {
+    bar: '#FF3B52',
+    glow: 'rgba(255,59,82,0.35)',
+    textClass: 'text-signal-red',
+  },
+  yellow: {
+    bar: '#FFAD2E',
+    glow: 'rgba(255,173,46,0.3)',
+    textClass: 'text-signal-amber',
+  },
+  green: {
+    bar: '#00D977',
+    glow: 'rgba(0,217,119,0.25)',
+    textClass: 'text-signal-green',
+  },
 }
 
 function filterNeedsAttention(athletes: AthleteWithPriority[]): AthleteWithPriority[] {
@@ -39,19 +47,97 @@ function filterNeedsAttention(athletes: AthleteWithPriority[]): AthleteWithPrior
 
 function SkeletonRow() {
   return (
-    <div className="bg-white border border-slate-200 rounded-lg flex items-center overflow-hidden animate-pulse">
-      <div className="w-1 self-stretch bg-slate-200" />
-      <div className="flex-1 py-3 px-4 flex items-center justify-between">
+    <div className="bg-surface border border-border rounded-xl flex items-center overflow-hidden animate-pulse">
+      <div className="w-[3px] self-stretch bg-elevated shrink-0" />
+      <div className="flex-1 py-4 px-4 flex items-center justify-between">
         <div className="space-y-2">
-          <div className="h-4 w-32 bg-slate-200 rounded" />
-          <div className="h-3 w-24 bg-slate-100 rounded" />
+          <div className="h-4 w-36 bg-elevated rounded-md" />
+          <div className="h-3 w-24 bg-elevated/60 rounded-md" />
         </div>
-        <div className="flex items-center gap-4">
-          <div className="h-8 w-10 bg-slate-200 rounded" />
-          <div className="h-8 w-24 bg-slate-100 rounded-md" />
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-10 bg-elevated rounded" />
+          <div className="h-8 w-24 bg-elevated rounded-lg" />
         </div>
       </div>
     </div>
+  )
+}
+
+function formatShortDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const d = new Date(year, month - 1, day)
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+function daysUntilRace(dateStr: string): number {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const race = new Date(year, month - 1, day)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return Math.ceil((race.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+function RaceCard({
+  race,
+  onViewRace,
+}: {
+  race: RaceWithAthletes
+  onViewRace: (raceId: string) => void
+}) {
+  const days = daysUntilRace(race.date)
+  const visibleAthletes = race.athletes.slice(0, 3)
+  const overflow = race.athletes.length - visibleAthletes.length
+
+  return (
+    <button
+      onClick={() => onViewRace(race.id)}
+      className="flex-shrink-0 w-44 bg-elevated border border-border rounded-xl p-4 text-left hover:border-signal-purple/40 hover:bg-signal-purple/5 transition-all duration-200 group"
+    >
+      {/* Race name */}
+      <p className="font-display font-black text-base text-ink uppercase tracking-wide leading-tight truncate">
+        {race.name}
+      </p>
+
+      {/* Date + days */}
+      <p className="font-mono text-[10px] text-accent mt-1.5 uppercase tracking-widest">
+        {formatShortDate(race.date)}
+      </p>
+      <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
+        in {days} day{days !== 1 ? 's' : ''}
+      </p>
+
+      {/* Athlete count */}
+      <p className="font-mono text-[10px] text-ink-dim mt-2 uppercase tracking-widest">
+        {race.athletes.length} athlete{race.athletes.length !== 1 ? 's' : ''}
+      </p>
+
+      {/* Avatar row */}
+      {race.athletes.length > 0 && (
+        <div className="flex items-center gap-1 mt-2">
+          {visibleAthletes.map(a => {
+            const initials = a.name
+              .split(' ')
+              .map(p => p[0] ?? '')
+              .join('')
+              .slice(0, 2)
+              .toUpperCase()
+            return (
+              <div
+                key={a.id}
+                className="w-6 h-6 rounded-full bg-bg border border-border flex items-center justify-center flex-shrink-0"
+              >
+                <span className="font-mono text-[8px] text-accent font-semibold">{initials}</span>
+              </div>
+            )
+          })}
+          {overflow > 0 && (
+            <div className="w-6 h-6 rounded-full bg-bg border border-border flex items-center justify-center flex-shrink-0">
+              <span className="font-mono text-[8px] text-ink-dim">+{overflow}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </button>
   )
 }
 
@@ -63,18 +149,19 @@ export default function PriorityList({
   onImportCSV,
   onEditAthlete,
   onRefresh,
+  upcomingRaces,
+  onViewRace,
 }: PriorityListProps) {
   const [filter, setFilter] = useState<FilterMode>('needs-attention')
   const [contactModalAthlete, setContactModalAthlete] = useState<AthleteWithPriority | null>(null)
   const [drawerAthlete, setDrawerAthlete] = useState<AthleteWithPriority | null>(null)
 
-  // Loading state
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between mb-6">
-          <div className="h-6 w-48 bg-slate-200 rounded animate-pulse" />
-          <div className="h-9 w-40 bg-slate-200 rounded-md animate-pulse" />
+          <div className="h-8 w-44 bg-surface rounded-md animate-pulse" />
+          <div className="h-9 w-52 bg-surface rounded-xl animate-pulse" />
         </div>
         {[1, 2, 3, 4, 5].map((i) => (
           <SkeletonRow key={i} />
@@ -83,14 +170,8 @@ export default function PriorityList({
     )
   }
 
-  // Zero athletes — onboarding
   if (athletes.length === 0) {
-    return (
-      <OnboardingScreen
-        onAddAthlete={onAddAthlete}
-        onImportRoster={onImportCSV}
-      />
-    )
+    return <OnboardingScreen onAddAthlete={onAddAthlete} onImportRoster={onImportCSV} />
   }
 
   const filtered = filter === 'needs-attention' ? filterNeedsAttention(athletes) : athletes
@@ -98,63 +179,76 @@ export default function PriorityList({
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-800">
-            Your Athletes
+      {/* Race feed */}
+      {upcomingRaces.length > 0 && (
+        <div className="mb-8">
+          <h2 className="font-display font-black text-xl text-ink uppercase tracking-wide mb-3">
+            Upcoming Races
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {filtered.length} of {athletes.length} athletes
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+            {upcomingRaces.map(race => (
+              <RaceCard key={race.id} race={race} onViewRace={onViewRace} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
+            Athletes
+          </h2>
+          <p className="font-mono text-[10px] text-ink-muted mt-0.5 uppercase tracking-widest">
+            {filtered.length} of {athletes.length}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Toggle */}
-          <div className="inline-flex rounded-md border border-slate-200 overflow-hidden">
-            <button
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === 'needs-attention'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-slate-600 hover:bg-slate-50'
-              }`}
-              onClick={() => setFilter('needs-attention')}
-            >
-              Needs Attention
-            </button>
-            <button
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-slate-600 hover:bg-slate-50'
-              }`}
-              onClick={() => setFilter('all')}
-            >
-              All Athletes
-            </button>
-          </div>
+
+        {/* Filter toggle */}
+        <div className="flex items-center bg-surface border border-border rounded-xl p-1 gap-1">
+          <button
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 ${
+              filter === 'needs-attention'
+                ? 'bg-accent/15 text-accent border border-accent/30'
+                : 'text-ink-dim hover:text-ink'
+            }`}
+            onClick={() => setFilter('needs-attention')}
+          >
+            Needs Attention
+          </button>
+          <button
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 ${
+              filter === 'all'
+                ? 'bg-accent/15 text-accent border border-accent/30'
+                : 'text-ink-dim hover:text-ink'
+            }`}
+            onClick={() => setFilter('all')}
+          >
+            All Athletes
+          </button>
         </div>
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-5">
         <Button onClick={onAddAthlete}>Add Athlete</Button>
         <Button variant="secondary" onClick={onImportCSV}>
           Import CSV
         </Button>
       </div>
 
-      {/* All caught up state */}
+      {/* All caught up */}
       {showAllCaughtUp && (
-        <div className="bg-white border border-slate-200 rounded-lg">
+        <div className="bg-surface border border-border rounded-xl">
           <EmptyState
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mx-auto"
+                className="h-10 w-10 mx-auto"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                strokeWidth={1.5}
+                strokeWidth={1.25}
               >
                 <path
                   strokeLinecap="round"
@@ -163,8 +257,8 @@ export default function PriorityList({
                 />
               </svg>
             }
-            heading="You're all caught up"
-            description="All your athletes have been contacted recently. Nice work."
+            heading="All Caught Up"
+            description="Every athlete has been contacted recently. Solid work."
             actionLabel="View All Athletes"
             onAction={() => setFilter('all')}
           />
@@ -175,33 +269,45 @@ export default function PriorityList({
       {!showAllCaughtUp && (
         <div className="space-y-2">
           {filtered.map((athlete) => {
+            const cfg = severityConfig[athlete.severity]
+            const raceDaysAway = athlete.upcoming_race
+              ? Math.ceil(
+                  (new Date(athlete.upcoming_race.date).getTime() - new Date().getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              : null
+
             return (
               <div
                 key={athlete.id}
-                className="bg-white border border-slate-200 rounded-lg flex items-center overflow-hidden hover:bg-slate-50 transition-colors cursor-pointer"
+                className="relative bg-surface border border-border rounded-xl flex items-stretch overflow-hidden hover:border-white/10 transition-all duration-200 cursor-pointer group"
                 onClick={() => setDrawerAthlete(athlete)}
               >
-                {/* Severity bar */}
+                {/* Severity bar with glow */}
                 <div
-                  className={`w-1 self-stretch ${severityColor[athlete.severity]}`}
+                  className="w-[3px] shrink-0"
+                  style={{
+                    backgroundColor: cfg.bar,
+                    boxShadow: `0 0 12px ${cfg.glow}, 0 0 4px ${cfg.bar}`,
+                  }}
                 />
 
                 {/* Main content */}
-                <div className="flex-1 py-3 px-4 flex items-center justify-between min-w-0">
+                <div className="flex-1 py-3.5 px-4 flex items-center justify-between min-w-0">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-800 truncate">
+                      <span className="text-sm font-semibold text-ink truncate">
                         {athlete.name}
                       </span>
                       {athlete.is_new_athlete && (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                        <span className="inline-flex items-center rounded-full bg-accent/10 border border-accent/20 px-2 py-0.5 font-mono text-[9px] font-medium text-accent uppercase tracking-widest">
                           New
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="font-mono text-[10px] text-ink-muted mt-0.5 uppercase tracking-widest">
                       {athlete.days_since_last_contact > 0
-                        ? `Last contact ${athlete.days_since_last_contact} days ago`
+                        ? `Last contact ${athlete.days_since_last_contact}d ago`
                         : athlete.days_since_last_contact === 0
                           ? 'Contacted today'
                           : 'No contact logged'}
@@ -209,40 +315,37 @@ export default function PriorityList({
                   </div>
 
                   {/* Right side */}
-                  <div className="flex items-center gap-4 ml-4 shrink-0">
-                    {/* Upcoming race badge */}
-                    {athlete.upcoming_race && (
+                  <div className="flex items-center gap-3 ml-4 shrink-0">
+                    {athlete.upcoming_race && raceDaysAway !== null && (
                       <Badge variant="race">
-                        {athlete.upcoming_race.race_name} —{' '}
-                        {Math.ceil(
-                          (new Date(athlete.upcoming_race.race_date).getTime() -
-                            new Date().getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        )}{' '}
-                        days
+                        {athlete.upcoming_race.name} — {raceDaysAway}d
                       </Badge>
                     )}
 
                     {/* Days counter */}
                     {athlete.days_since_last_contact === 0 ? (
-                      <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium">
-                        Today
-                      </span>
+                      <div className="w-12 text-center">
+                        <span className="inline-flex items-center rounded-full bg-signal-green/10 border border-signal-green/20 px-2 py-0.5 font-mono text-[9px] font-medium text-signal-green uppercase tracking-widest">
+                          Today
+                        </span>
+                      </div>
                     ) : (
                       <div className="text-center w-12 shrink-0">
                         <span
-                          className={`text-2xl font-bold ${severityTextColor[athlete.severity]}`}
+                          className={`font-display font-black text-3xl leading-none ${cfg.textClass}`}
                         >
                           {athlete.days_since_last_contact}
                         </span>
-                        <p className="text-xs text-slate-400">days</p>
+                        <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mt-0.5">
+                          days
+                        </p>
                       </div>
                     )}
 
                     {/* Log Contact button */}
                     <Button
                       variant="secondary"
-                      className="text-xs px-3 py-1 shrink-0"
+                      className="text-xs px-3 py-1.5 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation()
                         setContactModalAthlete(athlete)

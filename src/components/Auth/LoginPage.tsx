@@ -25,15 +25,39 @@ export default function LoginPage() {
     }
   }
 
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-sm border border-slate-200">
-          <div className="text-center">
-            <div className="mx-auto mb-4 text-blue-600">
+  return (
+    <div
+      className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden"
+    >
+      {/* Subtle grid background */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(30,42,58,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(30,42,58,0.35) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }}
+      />
+      {/* Radial teal glow from top */}
+      <div
+        className="fixed top-0 left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{
+          width: '900px',
+          height: '500px',
+          background: 'radial-gradient(ellipse at center top, rgba(0,200,240,0.07) 0%, transparent 65%)',
+        }}
+      />
+
+      <div
+        className="relative bg-elevated border border-border rounded-2xl p-8 max-w-sm w-full"
+        style={{ boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)' }}
+      >
+        {submitted ? (
+          <div className="text-center py-2">
+            <div className="w-14 h-14 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-5">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mx-auto"
+                className="h-6 w-6 text-accent"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -46,44 +70,41 @@ export default function LoginPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-lg font-semibold text-slate-800 mb-2">
-              Check your email
-            </h1>
-            <p className="text-sm text-slate-600">
-              We sent a magic link to{' '}
-              <span className="font-medium text-slate-800">{email}</span>.
-              Click the link to sign in.
+            <h2 className="font-display font-black text-2xl text-ink uppercase tracking-widest mb-2">
+              Check Inbox
+            </h2>
+            <p className="text-sm text-ink-dim leading-relaxed">
+              Magic link sent to{' '}
+              <span className="text-ink font-medium">{email}</span>
             </p>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-sm border border-slate-200">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">
-            Rolldown
-          </h1>
-          <p className="text-sm text-slate-500">Know who needs you today.</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            id="email"
-            label="Email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="coach@example.com"
-            error={error ?? undefined}
-          />
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Sending...' : 'Send Magic Link'}
-          </Button>
-        </form>
+        ) : (
+          <>
+            <div className="text-center mb-8">
+              <h1 className="font-display font-black text-5xl text-ink uppercase tracking-widest mb-2">
+                Rolldown
+              </h1>
+              <p className="font-mono text-[11px] text-ink-muted uppercase tracking-widest">
+                Know who needs you today
+              </p>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                id="email"
+                label="Email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="coach@example.com"
+                error={error ?? undefined}
+              />
+              <Button type="submit" disabled={loading} className="w-full justify-center py-2.5">
+                {loading ? 'Sending...' : 'Send Magic Link'}
+              </Button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   )

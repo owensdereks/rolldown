@@ -11,15 +11,15 @@ export default function OnboardingScreen({
 }: OnboardingScreenProps) {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center max-w-md">
-        <div className="mx-auto mb-6 text-slate-300">
+      <div className="text-center max-w-sm">
+        <div className="w-20 h-20 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-6">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 mx-auto"
+            className="h-9 w-9 text-accent"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            strokeWidth={1}
+            strokeWidth={1.25}
           >
             <path
               strokeLinecap="round"
@@ -28,16 +28,16 @@ export default function OnboardingScreen({
             />
           </svg>
         </div>
-        <h2 className="text-lg font-semibold text-slate-800 mb-2">
-          Welcome to Rolldown
+        <h2 className="font-display font-black text-3xl text-ink uppercase tracking-widest mb-2">
+          Your Roster Awaits
         </h2>
-        <p className="text-sm text-slate-600 mb-8">
-          Add your athletes to get started.
+        <p className="text-sm text-ink-dim mb-8 leading-relaxed">
+          Add your athletes to start tracking engagement and prioritizing follow-ups.
         </p>
         <div className="flex items-center justify-center gap-3">
-          <Button onClick={onAddAthlete}>Add Your First Athlete</Button>
+          <Button onClick={onAddAthlete}>Add First Athlete</Button>
           <Button variant="secondary" onClick={onImportRoster}>
-            Import Your Roster
+            Import Roster
           </Button>
         </div>
       </div>
