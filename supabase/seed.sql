@@ -1,0 +1,2 @@
+-- Intentionally empty for now.
+-- Pilot data should be imported through the application so it belongs to an authenticated coach.

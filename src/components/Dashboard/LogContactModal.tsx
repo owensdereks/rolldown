@@ -12,20 +12,18 @@ interface LogContactModalProps {
   onSaved: () => Promise<void>
 }
 
-const CONTACT_TYPES: ContactLog['contact_type'][] = ['text', 'email', 'call', 'other']
+const CONTACT_TYPES: ContactLog['contact_type'][] = ['text', 'call', 'video']
 
 const CONTACT_TYPE_LABELS: Record<ContactLog['contact_type'], string> = {
   text: 'Text',
-  email: 'Email',
   call: 'Call',
-  other: 'Other',
+  video: 'Video',
 }
 
 const CONTACT_TYPE_ICONS: Record<ContactLog['contact_type'], string> = {
   text: '💬',
-  email: '✉️',
   call: '📞',
-  other: '···',
+  video: '▣',
 }
 
 const MAX_NOTES = 500
@@ -39,10 +37,12 @@ export default function LogContactModal({
   const [contactType, setContactType] = useState<ContactLog['contact_type']>('text')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSave = async () => {
     if (saving) return
     setSaving(true)
+    setError(null)
     try {
       await createContactLog({
         athlete_id: athlete.id,
@@ -52,7 +52,7 @@ export default function LogContactModal({
       })
       await onSaved()
     } catch (err) {
-      console.error('Failed to log contact:', err)
+      setError(err instanceof Error ? err.message : 'Failed to log conversation')
       setSaving(false)
     }
   }
@@ -61,7 +61,7 @@ export default function LogContactModal({
     <Modal open onClose={onClose}>
       <div className="mb-5">
         <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
-          Log Contact
+          Log Conversation
         </p>
         <h3 className="font-display font-black text-2xl text-ink uppercase tracking-wide">
           {athlete.name}
@@ -73,7 +73,7 @@ export default function LogContactModal({
         <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-2.5">
           Method
         </p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {CONTACT_TYPES.map((type) => (
             <button
               key={type}
@@ -92,6 +92,12 @@ export default function LogContactModal({
           ))}
         </div>
       </div>
+
+      {error && (
+        <p role="alert" className="font-mono text-[10px] text-signal-red mb-4">
+          {error}
+        </p>
+      )}
 
       {/* Notes */}
       <div className="mb-5">

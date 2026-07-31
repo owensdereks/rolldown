@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase'
+import { calculatePriority, comparePriority } from '../lib/priority'
+import { localDateKey } from '../lib/dates'
 import type {
   Athlete,
   AthleteWithPriority,
@@ -8,11 +10,28 @@ import type {
   RaceWithAthletes,
 } from '../types'
 
+type RaceRow = Race & {
+  athlete_race_entries: Array<{
+    athlete_id: string
+    athletes: Athlete | null
+  }>
+}
+
+function mapRaceRows(data: unknown): RaceWithAthletes[] {
+  const rows = (data ?? []) as RaceRow[]
+  return rows.map(({ athlete_race_entries, ...race }) => ({
+    ...race,
+    athletes: athlete_race_entries
+      .map((entry) => entry.athletes)
+      .filter((athlete): athlete is Athlete => athlete !== null),
+  }))
+}
+
 // ── Athletes ──
 
 export async function getAthletes(coachId: string): Promise<AthleteWithPriority[]> {
   const now = new Date()
-  const today = now.toISOString().split('T')[0]
+  const today = localDateKey(now)
 
   // Fetch active athletes
   const { data: athletes, error: athletesErr } = await supabase
@@ -38,15 +57,17 @@ export async function getAthletes(coachId: string): Promise<AthleteWithPriority[
   // Fetch upcoming races via join table (within 14-day window)
   const fourteenDaysOut = new Date()
   fourteenDaysOut.setDate(fourteenDaysOut.getDate() + 14)
-  const cutoff = fourteenDaysOut.toISOString().split('T')[0]
+  const cutoff = localDateKey(fourteenDaysOut)
 
-  const { data: raceEntries } = await supabase
+  const { data: raceEntries, error: raceEntriesError } = await supabase
     .from('athlete_race_entries')
     .select('athlete_id, races(*)')
     .in('athlete_id', athleteIds)
     .gte('races.date', today)
     .lte('races.date', cutoff)
     .order('races(date)', { ascending: true })
+
+  if (raceEntriesError) throw raceEntriesError
 
   // Build maps
   const latestContactMap = new Map<string, ContactLog>()
@@ -56,43 +77,13 @@ export async function getAthletes(coachId: string): Promise<AthleteWithPriority[
     }
   }
 
-  // Compute priority list
-  const toUTCDateOnly = (d: Date) =>
-    new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-
-  const nowDateOnly = toUTCDateOnly(now)
-
   const result: AthleteWithPriority[] = athletes.map((athlete) => {
     const lastContact = latestContactMap.get(athlete.id)
-    const refDate = lastContact
-      ? new Date(lastContact.contacted_at)
-      : new Date(athlete.created_at)
-    const refDateOnly = toUTCDateOnly(refDate)
-    const daysSince = Math.max(
-      0,
-      Math.floor(
-        (nowDateOnly.getTime() - refDateOnly.getTime()) / (1000 * 60 * 60 * 24)
-      )
-    )
-
-    const coachingStart = new Date(athlete.coaching_start_date)
-    const daysSinceStart = Math.floor(
-      (now.getTime() - coachingStart.getTime()) / (1000 * 60 * 60 * 24)
-    )
-    const isNew = daysSinceStart <= 90
-
-    let severity: 'green' | 'yellow' | 'red'
-    if (isNew) {
-      // New athletes (≤90 days): green 0-1, yellow 2, red 3+
-      if (daysSince <= 1) severity = 'green'
-      else if (daysSince <= 2) severity = 'yellow'
-      else severity = 'red'
-    } else {
-      // Tenured athletes (>90 days): green 0-4, yellow 5-6, red 7+
-      if (daysSince <= 4) severity = 'green'
-      else if (daysSince <= 6) severity = 'yellow'
-      else severity = 'red'
-    }
+    const priority = calculatePriority({
+      coachingStartDate: athlete.coaching_start_date,
+      lastContactAt: lastContact?.contacted_at ?? null,
+      now,
+    })
 
     const upcoming_race =
       raceEntries
@@ -102,15 +93,16 @@ export async function getAthletes(coachId: string): Promise<AthleteWithPriority[
 
     return {
       ...athlete,
-      days_since_last_contact: daysSince,
-      severity,
-      is_new_athlete: isNew,
+      days_since_last_contact: priority.daysSinceLastContact,
+      last_contact_at: lastContact?.contacted_at ?? null,
+      severity: priority.severity,
+      is_new_athlete: priority.isNewAthlete,
       upcoming_race,
     }
   })
 
   // Sort by days since last contact descending (most neglected first)
-  result.sort((a, b) => b.days_since_last_contact - a.days_since_last_contact)
+  result.sort(comparePriority)
 
   return result
 }
@@ -181,15 +173,12 @@ export async function getRaces(coachId: string): Promise<RaceWithAthletes[]> {
       )
     `)
     .eq('coach_id', coachId)
-    .gte('date', new Date().toISOString().split('T')[0])
+    .gte('date', localDateKey())
     .order('date', { ascending: true })
 
   if (error) throw error
 
-  return (data ?? []).map(race => ({
-    ...race,
-    athletes: race.athlete_race_entries.map((e: any) => e.athletes)
-  }))
+  return mapRaceRows(data)
 }
 
 // Get all races for a single athlete
@@ -198,11 +187,12 @@ export async function getAthleteRaces(athleteId: string): Promise<Race[]> {
     .from('athlete_race_entries')
     .select('races(*)')
     .eq('athlete_id', athleteId)
-    .gte('races.date', new Date().toISOString().split('T')[0])
+    .gte('races.date', localDateKey())
     .order('races(date)', { ascending: true })
 
   if (error) throw error
-  return (data ?? []).map((e: any) => e.races).filter(Boolean)
+  const rows = (data ?? []) as unknown as Array<{ races: Race | null }>
+  return rows.map((entry) => entry.races).filter((race): race is Race => race !== null)
 }
 
 // Create a race (or find existing) and enroll an athlete
@@ -256,10 +246,10 @@ export async function getUpcomingRaces(
   coachId: string,
   days: number = 30
 ): Promise<RaceWithAthletes[]> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateKey()
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() + days)
-  const cutoffStr = cutoff.toISOString().split('T')[0]
+  const cutoffStr = localDateKey(cutoff)
 
   const { data, error } = await supabase
     .from('races')
@@ -277,10 +267,7 @@ export async function getUpcomingRaces(
 
   if (error) throw error
 
-  return (data ?? []).map(race => ({
-    ...race,
-    athletes: race.athlete_race_entries.map((e: any) => e.athletes)
-  }))
+  return mapRaceRows(data)
 }
 
 // ── Contact Logs ──
@@ -307,6 +294,15 @@ export async function createContactLog(
 
   if (error) throw error
   return log as ContactLog
+}
+
+export async function deleteContactLog(contactLogId: string): Promise<void> {
+  const { error } = await supabase
+    .from('contact_logs')
+    .delete()
+    .eq('id', contactLogId)
+
+  if (error) throw error
 }
 
 // ── Coach ──

@@ -42,14 +42,16 @@ export default function RaceDetailPage({
   const [selectedAthleteId, setSelectedAthleteId] = useState('')
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchRace = useCallback(async () => {
+    setError(null)
     try {
       const races = await getRaces(coachId)
       const found = races.find(r => r.id === raceId) ?? null
       setRace(found)
     } catch (err) {
-      console.error('Failed to load race:', err)
+      setError(err instanceof Error ? err.message : 'Unable to load race')
     } finally {
       setLoading(false)
     }
@@ -66,7 +68,7 @@ export default function RaceDetailPage({
       await fetchRace()
       onRosterChanged()
     } catch (err) {
-      console.error('Failed to remove athlete:', err)
+      setError(err instanceof Error ? err.message : 'Unable to remove athlete')
     } finally {
       setRemoving(null)
     }
@@ -84,7 +86,7 @@ export default function RaceDetailPage({
       await fetchRace()
       onRosterChanged()
     } catch (err) {
-      console.error('Failed to add athlete:', err)
+      setError(err instanceof Error ? err.message : 'Unable to add athlete')
     } finally {
       setAdding(false)
     }
@@ -112,7 +114,15 @@ export default function RaceDetailPage({
         >
           ← Back
         </button>
-        <p className="text-ink-dim font-mono text-sm">Race not found.</p>
+        <p className="text-ink-dim font-mono text-sm">
+          {error ? 'The race could not be loaded.' : 'Race not found.'}
+        </p>
+        {error && <p className="mt-2 break-words font-mono text-xs text-signal-red">{error}</p>}
+        {error && (
+          <button onClick={() => void fetchRace()} className="mt-4 font-mono text-xs uppercase tracking-widest text-accent">
+            Try again
+          </button>
+        )}
       </div>
     )
   }
@@ -129,6 +139,12 @@ export default function RaceDetailPage({
       >
         ← Back
       </button>
+
+      {error && (
+        <div role="alert" className="mb-5 rounded-xl border border-signal-red/30 bg-signal-red/10 px-4 py-3 text-sm text-signal-red">
+          {error}
+        </div>
+      )}
 
       {/* Race header */}
       <div className="mb-8">

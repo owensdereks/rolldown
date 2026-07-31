@@ -49,13 +49,14 @@ export interface ContactLog {
   athlete_id: string
   coach_id: string
   contacted_at: string
-  contact_type: 'text' | 'email' | 'call' | 'other'
+  contact_type: 'text' | 'call' | 'video'
   notes: string | null
   created_at: string
 }
 
 export interface AthleteWithPriority extends Athlete {
-  days_since_last_contact: number
+  days_since_last_contact: number | null
+  last_contact_at: string | null
   severity: 'green' | 'yellow' | 'red'
   is_new_athlete: boolean
   upcoming_race: Race | null   // nearest future race, any horizon

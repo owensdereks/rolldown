@@ -6,7 +6,19 @@
 - A Vercel account (sign up at vercel.com with your GitHub account)
 - Your Supabase project URL and anon key (found in Supabase → Settings → API)
 
-## Step 1: Push to GitHub
+## Step 1: Recreate the Database
+
+Link the repository with `supabase link --project-ref <project-ref>`, then run `supabase db push`. Alternatively, open the SQL editor and run every file in `supabase/migrations` in numeric order. Do not skip the shared-races or conversation-types migrations.
+
+Afterward, confirm these tables exist:
+
+- `coaches`
+- `athletes`
+- `contact_logs`
+- `races`
+- `athlete_race_entries`
+
+## Step 2: Push to GitHub
 
 ```bash
 # Create a new repo on GitHub, then:
@@ -15,7 +27,7 @@ git branch -M main
 git push -u origin main
 ```
 
-## Step 2: Import into Vercel
+## Step 3: Import into Vercel
 
 1. Go to [vercel.com](https://vercel.com) and sign in
 2. Click **"Add New…"** → **"Project"**
@@ -28,7 +40,7 @@ git push -u origin main
 
 Vercel will run `npm run build` and serve the `dist` folder automatically.
 
-## Step 3: Update Supabase Auth Settings
+## Step 4: Update Supabase Auth Settings
 
 Once deployed, Vercel will give you a URL like `https://rolldown-xxxx.vercel.app`.
 
@@ -39,12 +51,15 @@ Once deployed, Vercel will give you a URL like `https://rolldown-xxxx.vercel.app
    - `https://rolldown-xxxx.vercel.app/**`
 5. Click **Save**
 
-## Step 4: Test
+## Step 5: Test
 
 1. Open your Vercel URL in a browser
 2. Try logging in with a magic link
 3. Check that the magic link email arrives and redirects back to your live app
 4. Verify client-side routing works (navigate between pages, refresh on a sub-route)
+5. Create an athlete with no conversation history and confirm they appear as `Unknown`
+6. Use `Log text`, then confirm `Undo` restores the prior state
+7. Add two athletes to one race and confirm they appear together under Race Weekends
 
 ## Custom Domain (Optional)
 

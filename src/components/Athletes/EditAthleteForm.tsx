@@ -8,10 +8,11 @@ import {
   archiveAthlete,
 } from '../../services/api'
 import type { Race } from '../../types'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/auth'
 import Button from '../ui/Button'
 import { Input, Textarea } from '../ui/Input'
 import Modal from '../ui/Modal'
+import { dateOnlyToLocalDate, localDateKey } from '../../lib/dates'
 
 interface EditAthleteFormProps {
   athleteId: string
@@ -83,7 +84,7 @@ export default function EditAthleteForm({
       setRaceError('Both race name and date are required')
       return
     }
-    const today = new Date().toISOString().split('T')[0]
+    const today = localDateKey()
     if (newRaceDate <= today) {
       setRaceError('Race date must be in the future')
       return
@@ -223,7 +224,7 @@ export default function EditAthleteForm({
                   <div>
                     <p className="text-sm text-ink">{race.name}</p>
                     <p className="font-mono text-[10px] text-ink-muted mt-0.5">
-                      {new Date(race.date).toLocaleDateString('en-US', {
+                      {dateOnlyToLocalDate(race.date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',

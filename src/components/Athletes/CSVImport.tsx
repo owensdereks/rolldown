@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback } from 'react'
 import Papa from 'papaparse'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/auth'
 import { createAthlete, createContactLog, enrollAthleteInRace } from '../../services/api'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
+import { localDateKey } from '../../lib/dates'
 
 interface CSVImportProps {
   onCancel: () => void
@@ -45,7 +46,7 @@ function isValidDate(str: string): boolean {
 }
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0]
+  return localDateKey()
 }
 
 export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
@@ -190,14 +191,15 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
           coaching_start_date: row.coaching_start_date || todayStr(),
         })
 
-        const contactDate = row.last_contact_date || todayStr()
-        await createContactLog({
-          athlete_id: athlete.id,
-          coach_id: user.id,
-          contact_type: 'other',
-          notes: 'Imported via CSV',
-          contacted_at: contactDate,
-        })
+        if (row.last_contact_date) {
+          await createContactLog({
+            athlete_id: athlete.id,
+            coach_id: user.id,
+            contact_type: 'text',
+            notes: 'Imported conversation date',
+            contacted_at: `${row.last_contact_date}T12:00:00Z`,
+          })
+        }
 
         if (row.race_name && row.race_date) {
           await enrollAthleteInRace(user.id, athlete.id, row.race_name, row.race_date)
@@ -316,7 +318,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
                     {row.coaching_start_date || '(today)'}
                   </td>
                   <td className="py-3 px-4 font-mono text-xs text-ink-dim">
-                    {row.last_contact_date || '(today)'}
+                    {row.last_contact_date || '(none logged)'}
                   </td>
                   <td className="py-3 px-4 text-ink-dim">
                     {row.race_name ? `${row.race_name} (${row.race_date})` : '—'}

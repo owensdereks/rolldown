@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/auth'
 import { createAthlete, enrollAthleteInRace } from '../../services/api'
 import Button from '../ui/Button'
 import { Input, Textarea } from '../ui/Input'
+import { localDateKey } from '../../lib/dates'
 
 interface AddAthleteFormProps {
   onCancel: () => void
@@ -21,7 +22,7 @@ export default function AddAthleteForm({
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [coachingStartDate, setCoachingStartDate] = useState(
-    new Date().toISOString().split('T')[0]
+    localDateKey()
   )
   const [raceName, setRaceName] = useState('')
   const [raceDate, setRaceDate] = useState('')
@@ -41,7 +42,7 @@ export default function AddAthleteForm({
     }
 
     if (hasRaceDate) {
-      const today = new Date().toISOString().split('T')[0]
+      const today = localDateKey()
       if (raceDate <= today) {
         newErrors.raceDate = 'Race date must be in the future'
       }

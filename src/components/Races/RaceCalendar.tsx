@@ -44,12 +44,23 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
   const [month, setMonth] = useState(todayRaw.getMonth())
   const [races, setRaces] = useState<RaceWithAthletes[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadRaces = () => {
+    setLoading(true)
+    setError(null)
     getRaces(coachId)
       .then(setRaces)
-      .catch(console.error)
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Unable to load races')
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadRaces()
+    // loadRaces is deliberately scoped to the current coach.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coachId])
 
   const prevMonth = () => {
@@ -109,6 +120,14 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
           <p className="font-mono text-xs text-ink-muted animate-pulse uppercase tracking-widest">
             Loading races…
           </p>
+        </div>
+      ) : error ? (
+        <div className="rounded-xl border border-signal-red/30 bg-surface p-8 text-center">
+          <p className="text-sm text-ink-dim">The race calendar could not be loaded.</p>
+          <p className="mt-2 break-words font-mono text-xs text-signal-red">{error}</p>
+          <button onClick={loadRaces} className="mt-4 font-mono text-xs uppercase tracking-widest text-accent">
+            Try again
+          </button>
         </div>
       ) : (
         <div className="border border-border rounded-xl overflow-hidden">

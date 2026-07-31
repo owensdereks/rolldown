@@ -6,6 +6,7 @@ import Button from '../ui/Button'
 import { Textarea } from '../ui/Input'
 import EmptyState from '../ui/EmptyState'
 import LogContactModal from './LogContactModal'
+import { dateOnlyToLocalDate, daysUntilDate } from '../../lib/dates'
 
 interface AthleteDetailDrawerProps {
   athleteId: string
@@ -18,16 +19,14 @@ interface AthleteDetailDrawerProps {
 
 const CONTACT_TYPE_COLORS: Record<ContactLog['contact_type'], string> = {
   text: 'bg-accent',
-  email: 'bg-signal-purple',
   call: 'bg-signal-green',
-  other: 'bg-ink-muted',
+  video: 'bg-signal-purple',
 }
 
 const CONTACT_TYPE_LABELS: Record<ContactLog['contact_type'], string> = {
   text: 'Text',
-  email: 'Email',
   call: 'Call',
-  other: 'Other',
+  video: 'Video',
 }
 
 const MAX_NOTES = 2000
@@ -49,7 +48,7 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 function formatCoachingSince(dateStr: string): string {
-  const date = new Date(dateStr)
+  const date = dateOnlyToLocalDate(dateStr)
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
@@ -74,6 +73,11 @@ export default function AthleteDetailDrawer({
 
   const drawerRef = useRef<HTMLDivElement>(null)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false)
+    setTimeout(onClose, 300)
+  }, [onClose])
 
   // Animate in on mount
   useEffect(() => {
@@ -120,7 +124,7 @@ export default function AthleteDetailDrawer({
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [contactModalOpen])
+  }, [contactModalOpen, handleClose])
 
   // Focus trap
   useEffect(() => {
@@ -154,11 +158,6 @@ export default function AthleteDetailDrawer({
     document.addEventListener('keydown', handleTab)
     return () => document.removeEventListener('keydown', handleTab)
   }, [contactModalOpen, loading])
-
-  const handleClose = () => {
-    setIsOpen(false)
-    setTimeout(onClose, 300)
-  }
 
   // Auto-save notes on blur
   const handleNotesSave = async () => {
@@ -215,10 +214,7 @@ export default function AthleteDetailDrawer({
   // Race badge
   const raceBadge = (() => {
     if (!priorityAthlete.upcoming_race) return null
-    const daysAway = Math.ceil(
-      (new Date(priorityAthlete.upcoming_race.date).getTime() - new Date().getTime()) /
-        (1000 * 60 * 60 * 24)
-    )
+    const daysAway = daysUntilDate(priorityAthlete.upcoming_race.date)
     return (
       <Badge variant="race">
         {priorityAthlete.upcoming_race.name} — {daysAway}d
@@ -228,10 +224,7 @@ export default function AthleteDetailDrawer({
 
   // Tenure
   const tenureDays = athleteData
-    ? Math.floor(
-        (new Date().getTime() - new Date(athleteData.coaching_start_date).getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
+    ? -daysUntilDate(athleteData.coaching_start_date)
     : 0
 
   const displayedLogs = showAllLogs ? contactLogs : contactLogs.slice(0, INITIAL_LOG_COUNT)
@@ -355,10 +348,7 @@ export default function AthleteDetailDrawer({
                     </p>
                     <div className="space-y-2">
                       {races.map((race) => {
-                        const daysAway = Math.ceil(
-                          (new Date(race.date).getTime() - new Date().getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        )
+                        const daysAway = daysUntilDate(race.date)
                         return (
                           <div
                             key={race.id}
@@ -367,7 +357,7 @@ export default function AthleteDetailDrawer({
                             <div>
                               <p className="text-sm font-semibold text-ink">{race.name}</p>
                               <p className="font-mono text-xs text-signal-purple mt-0.5">
-                                {new Date(race.date).toLocaleDateString('en-US', {
+                                {dateOnlyToLocalDate(race.date).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
@@ -415,18 +405,18 @@ export default function AthleteDetailDrawer({
                 </p>
               </div>
 
-              {/* Contact History */}
+              {/* Conversation History */}
               <div>
                 <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-3">
-                  Contact History
+                  Conversation History
                 </p>
 
                 {contactLogs.length === 0 ? (
                   <div className="bg-surface border border-border rounded-xl">
                     <EmptyState
-                      heading="No Contacts Yet"
-                      description="Log your first contact with this athlete to start tracking communication."
-                      actionLabel="Log Contact"
+                      heading="No Conversations Yet"
+                      description="Log your first conversation with this athlete to start tracking communication."
+                      actionLabel="Log Conversation"
                       onAction={() => setContactModalOpen(true)}
                     />
                   </div>
@@ -500,7 +490,7 @@ export default function AthleteDetailDrawer({
             className="w-full justify-center py-2.5"
             onClick={() => setContactModalOpen(true)}
           >
-            Log Contact
+            Log Conversation
           </Button>
           <button
             className="w-full text-center font-mono text-[11px] text-ink-dim hover:text-ink uppercase tracking-widest font-medium mt-3 transition-colors"
@@ -511,7 +501,7 @@ export default function AthleteDetailDrawer({
         </div>
       </div>
 
-      {/* Log Contact Modal — layered above drawer */}
+      {/* Log conversation modal — layered above drawer */}
       {contactModalOpen && (
         <LogContactModal
           athlete={priorityAthlete}

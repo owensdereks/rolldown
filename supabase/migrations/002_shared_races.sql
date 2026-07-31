@@ -3,7 +3,7 @@
 -- 1. Create canonical races table
 CREATE TABLE races (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  coach_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  coach_id UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   date DATE NOT NULL,
   location TEXT,
@@ -38,9 +38,11 @@ ALTER TABLE athlete_race_entries ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "are_all_own" ON athlete_race_entries
   FOR ALL USING (
     athlete_id IN (SELECT id FROM athletes WHERE coach_id = auth.uid())
+    AND race_id IN (SELECT id FROM races WHERE coach_id = auth.uid())
   )
   WITH CHECK (
     athlete_id IN (SELECT id FROM athletes WHERE coach_id = auth.uid())
+    AND race_id IN (SELECT id FROM races WHERE coach_id = auth.uid())
   );
 
 -- 3. Migrate existing data
@@ -65,6 +67,6 @@ ON CONFLICT (athlete_id, race_id) DO NOTHING;
 DROP TABLE athlete_races;
 
 -- DOWN
-DROP TABLE IF EXISTS athlete_race_entries;
-DROP TABLE IF EXISTS races;
+-- DROP TABLE IF EXISTS athlete_race_entries;
+-- DROP TABLE IF EXISTS races;
 -- Note: cannot restore athlete_races in DOWN without a backup

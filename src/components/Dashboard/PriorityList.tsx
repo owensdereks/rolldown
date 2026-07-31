@@ -4,8 +4,9 @@ import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import EmptyState from '../ui/EmptyState'
 import OnboardingScreen from '../Onboarding/OnboardingScreen'
-import LogContactModal from './LogContactModal'
 import AthleteDetailDrawer from './AthleteDetailDrawer'
+import { createContactLog, deleteContactLog } from '../../services/api'
+import { dateOnlyToLocalDate, daysUntilDate, localDateKey } from '../../lib/dates'
 
 interface PriorityListProps {
   athletes: AthleteWithPriority[]
@@ -17,6 +18,8 @@ interface PriorityListProps {
   onRefresh: () => Promise<void>
   upcomingRaces: RaceWithAthletes[]
   onViewRace: (raceId: string) => void
+  error: string | null
+  onRetry: () => void
 }
 
 type FilterMode = 'needs-attention' | 'all'
@@ -64,17 +67,32 @@ function SkeletonRow() {
 }
 
 function formatShortDate(dateStr: string): string {
-  const [year, month, day] = dateStr.split('-').map(Number)
-  const d = new Date(year, month - 1, day)
+  const d = dateOnlyToLocalDate(dateStr)
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 function daysUntilRace(dateStr: string): number {
+  return daysUntilDate(dateStr)
+}
+
+function weekendKey(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number)
-  const race = new Date(year, month - 1, day)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return Math.ceil((race.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const date = new Date(year, month - 1, day)
+  const dayOfWeek = date.getDay()
+  date.setDate(date.getDate() + (dayOfWeek === 0 ? -1 : 6 - dayOfWeek))
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function weekendLabel(key: string): string {
+  const todayKey = localDateKey()
+  const thisWeekend = weekendKey(todayKey)
+  const [year, month, day] = thisWeekend.split('-').map(Number)
+  const nextWeekendDate = new Date(year, month - 1, day + 7)
+  const nextWeekend = `${nextWeekendDate.getFullYear()}-${String(nextWeekendDate.getMonth() + 1).padStart(2, '0')}-${String(nextWeekendDate.getDate()).padStart(2, '0')}`
+
+  if (key === thisWeekend) return 'This weekend'
+  if (key === nextWeekend) return 'Next weekend'
+  return `Weekend of ${formatShortDate(key).replace(/^\w+, /, '')}`
 }
 
 function RaceCard({
@@ -103,7 +121,7 @@ function RaceCard({
         {formatShortDate(race.date)}
       </p>
       <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
-        in {days} day{days !== 1 ? 's' : ''}
+        {days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`}
       </p>
 
       {/* Athlete count */}
@@ -151,10 +169,55 @@ export default function PriorityList({
   onRefresh,
   upcomingRaces,
   onViewRace,
+  error,
+  onRetry,
 }: PriorityListProps) {
   const [filter, setFilter] = useState<FilterMode>('needs-attention')
-  const [contactModalAthlete, setContactModalAthlete] = useState<AthleteWithPriority | null>(null)
   const [drawerAthlete, setDrawerAthlete] = useState<AthleteWithPriority | null>(null)
+  const [quickLoggingId, setQuickLoggingId] = useState<string | null>(null)
+  const [quickLogResult, setQuickLogResult] = useState<{ id: string; athleteName: string } | null>(null)
+  const [quickLogError, setQuickLogError] = useState<string | null>(null)
+
+  const handleQuickLog = async (athlete: AthleteWithPriority) => {
+    if (quickLoggingId) return
+    setQuickLoggingId(athlete.id)
+    setQuickLogError(null)
+    try {
+      const log = await createContactLog({
+        athlete_id: athlete.id,
+        coach_id: coachId,
+        contact_type: 'text',
+        notes: null,
+      })
+      setQuickLogResult({ id: log.id, athleteName: athlete.name })
+      await onRefresh()
+    } catch (err) {
+      setQuickLogError(err instanceof Error ? err.message : 'Could not log the conversation')
+    } finally {
+      setQuickLoggingId(null)
+    }
+  }
+
+  const handleUndoQuickLog = async () => {
+    if (!quickLogResult) return
+    try {
+      await deleteContactLog(quickLogResult.id)
+      setQuickLogResult(null)
+      await onRefresh()
+    } catch (err) {
+      setQuickLogError(err instanceof Error ? err.message : 'Could not undo the conversation')
+    }
+  }
+
+  const raceWeekends = Array.from(
+    upcomingRaces.reduce((groups, race) => {
+      const key = weekendKey(race.date)
+      const races = groups.get(key) ?? []
+      races.push(race)
+      groups.set(key, races)
+      return groups
+    }, new Map<string, RaceWithAthletes[]>())
+  )
 
   if (loading) {
     return (
@@ -170,6 +233,29 @@ export default function PriorityList({
     )
   }
 
+  if (error && athletes.length === 0) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-signal-red/30 bg-surface p-8 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-signal-red">
+          Data unavailable
+        </p>
+        <h2 className="mt-2 font-display text-3xl font-black uppercase tracking-wide text-ink">
+          Rolldown couldn’t load your roster
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-ink-dim">
+          Check that the Supabase project is active and that this deployment has the correct environment variables.
+        </p>
+        <details className="mt-4 text-left">
+          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-widest text-ink-muted">
+            Technical details
+          </summary>
+          <p className="mt-2 break-words font-mono text-xs text-ink-dim">{error}</p>
+        </details>
+        <Button className="mt-6" onClick={onRetry}>Try again</Button>
+      </div>
+    )
+  }
+
   if (athletes.length === 0) {
     return <OnboardingScreen onAddAthlete={onAddAthlete} onImportRoster={onImportCSV} />
   }
@@ -179,15 +265,37 @@ export default function PriorityList({
 
   return (
     <div>
+      {quickLogError && (
+        <div role="alert" className="mb-4 rounded-xl border border-signal-red/30 bg-signal-red/10 px-4 py-3 text-sm text-signal-red">
+          {quickLogError}
+        </div>
+      )}
+
+      {error && (
+        <div role="alert" className="mb-4 flex items-center justify-between gap-4 rounded-xl border border-signal-amber/30 bg-signal-amber/10 px-4 py-3 text-sm text-signal-amber">
+          <span>Some data could not be refreshed. Your existing list is still shown.</span>
+          <button onClick={onRetry} className="font-mono text-[10px] uppercase tracking-widest">Retry</button>
+        </div>
+      )}
+
       {/* Race feed */}
       {upcomingRaces.length > 0 && (
         <div className="mb-8">
           <h2 className="font-display font-black text-xl text-ink uppercase tracking-wide mb-3">
-            Upcoming Races
+            Race Weekends
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-            {upcomingRaces.map(race => (
-              <RaceCard key={race.id} race={race} onViewRace={onViewRace} />
+          <div className="space-y-4">
+            {raceWeekends.map(([key, races]) => (
+              <section key={key} aria-labelledby={`weekend-${key}`}>
+                <p id={`weekend-${key}`} className="mb-2 font-mono text-[10px] uppercase tracking-widest text-ink-muted">
+                  {weekendLabel(key)}
+                </p>
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                  {races.map((race) => (
+                    <RaceCard key={race.id} race={race} onViewRace={onViewRace} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         </div>
@@ -271,10 +379,7 @@ export default function PriorityList({
           {filtered.map((athlete) => {
             const cfg = severityConfig[athlete.severity]
             const raceDaysAway = athlete.upcoming_race
-              ? Math.ceil(
-                  (new Date(athlete.upcoming_race.date).getTime() - new Date().getTime()) /
-                    (1000 * 60 * 60 * 24)
-                )
+              ? daysUntilDate(athlete.upcoming_race.date)
               : null
 
             return (
@@ -306,11 +411,13 @@ export default function PriorityList({
                       )}
                     </div>
                     <p className="font-mono text-[10px] text-ink-muted mt-0.5 uppercase tracking-widest">
-                      {athlete.days_since_last_contact > 0
-                        ? `Last contact ${athlete.days_since_last_contact}d ago`
+                      {athlete.days_since_last_contact === null
+                        ? 'No conversation logged'
+                        : athlete.days_since_last_contact > 0
+                        ? `Last conversation ${athlete.days_since_last_contact}d ago`
                         : athlete.days_since_last_contact === 0
-                          ? 'Contacted today'
-                          : 'No contact logged'}
+                          ? 'Conversation today'
+                          : 'No conversation logged'}
                     </p>
                   </div>
 
@@ -323,7 +430,13 @@ export default function PriorityList({
                     )}
 
                     {/* Days counter */}
-                    {athlete.days_since_last_contact === 0 ? (
+                    {athlete.days_since_last_contact === null ? (
+                      <div className="w-12 text-center">
+                        <span className="font-mono text-[9px] font-medium text-signal-red uppercase tracking-widest">
+                          Unknown
+                        </span>
+                      </div>
+                    ) : athlete.days_since_last_contact === 0 ? (
                       <div className="w-12 text-center">
                         <span className="inline-flex items-center rounded-full bg-signal-green/10 border border-signal-green/20 px-2 py-0.5 font-mono text-[9px] font-medium text-signal-green uppercase tracking-widest">
                           Today
@@ -342,16 +455,17 @@ export default function PriorityList({
                       </div>
                     )}
 
-                    {/* Log Contact button */}
+                    {/* The most common workflow is intentionally one click. */}
                     <Button
                       variant="secondary"
                       className="text-xs px-3 py-1.5 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setContactModalAthlete(athlete)
+                        void handleQuickLog(athlete)
                       }}
+                      disabled={quickLoggingId !== null}
                     >
-                      Log Contact
+                      {quickLoggingId === athlete.id ? 'Logging…' : 'Log text'}
                     </Button>
                   </div>
                 </div>
@@ -359,19 +473,6 @@ export default function PriorityList({
             )
           })}
         </div>
-      )}
-
-      {/* Log Contact Modal */}
-      {contactModalAthlete && (
-        <LogContactModal
-          athlete={contactModalAthlete}
-          coachId={coachId}
-          onClose={() => setContactModalAthlete(null)}
-          onSaved={async () => {
-            setContactModalAthlete(null)
-            await onRefresh()
-          }}
-        />
       )}
 
       {/* Athlete Detail Drawer */}
@@ -387,6 +488,32 @@ export default function PriorityList({
           }}
           onRefresh={onRefresh}
         />
+      )}
+
+      {quickLogResult && (
+        <div
+          role="status"
+          className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-xl border border-border bg-elevated px-4 py-3 shadow-2xl"
+        >
+          <span className="text-sm text-ink">
+            Text conversation logged for {quickLogResult.athleteName}.
+          </span>
+          <button
+            type="button"
+            onClick={() => void handleUndoQuickLog()}
+            className="font-mono text-[10px] text-accent uppercase tracking-widest hover:text-ink"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuickLogResult(null)}
+            className="text-ink-muted hover:text-ink"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
       )}
     </div>
   )

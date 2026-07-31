@@ -39,6 +39,10 @@ CREATE TABLE contact_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX idx_athletes_coach_status ON athletes(coach_id, status);
+CREATE INDEX idx_contact_logs_athlete_contacted_at
+  ON contact_logs(athlete_id, contacted_at DESC);
+
 -- ── Row Level Security ──
 
 ALTER TABLE coaches ENABLE ROW LEVEL SECURITY;
@@ -81,7 +85,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users

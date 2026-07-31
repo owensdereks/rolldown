@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from './contexts/AuthContext'
+import { useAuth } from './contexts/auth'
 import { getAthletes, getCoach, getUpcomingRaces } from './services/api'
 import type { AthleteWithPriority, Coach, RaceWithAthletes } from './types'
 import LoginPage from './components/Auth/LoginPage'
@@ -26,10 +26,13 @@ function AuthenticatedApp() {
   const [upcomingRaces, setUpcomingRaces] = useState<RaceWithAthletes[]>([])
   const [coach, setCoach] = useState<Coach | null>(null)
   const [loadingData, setLoadingData] = useState(true)
+  const [dataError, setDataError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
     const load = async () => {
+      setDataError(null)
       try {
         const [coachData, athleteData, racesData] = await Promise.all([
           getCoach(),
@@ -41,20 +44,28 @@ function AuthenticatedApp() {
         setUpcomingRaces(racesData)
       } catch (err) {
         console.error('Failed to load data:', err)
+        setDataError(err instanceof Error ? err.message : 'Unable to load coaching data')
       } finally {
         setLoadingData(false)
       }
     }
     load()
-  }, [user])
+  }, [user, reloadKey])
+
+  const retryLoad = () => {
+    setLoadingData(true)
+    setReloadKey((key) => key + 1)
+  }
 
   const refreshUpcomingRaces = async () => {
     if (!coach) return
     try {
       const races = await getUpcomingRaces(coach.id)
       setUpcomingRaces(races)
+      setDataError(null)
     } catch (err) {
       console.error('Failed to refresh upcoming races:', err)
+      setDataError(err instanceof Error ? err.message : 'Unable to refresh races')
     }
   }
 
@@ -67,8 +78,10 @@ function AuthenticatedApp() {
       ])
       setAthletes(athleteData)
       setUpcomingRaces(racesData)
+      setDataError(null)
     } catch (err) {
       console.error('Failed to refresh athletes:', err)
+      setDataError(err instanceof Error ? err.message : 'Unable to refresh coaching data')
     }
   }
 
@@ -94,6 +107,8 @@ function AuthenticatedApp() {
           onRefresh={refreshAthletes}
           upcomingRaces={upcomingRaces}
           onViewRace={(raceId) => setView({ page: 'race-detail', raceId })}
+          error={dataError}
+          onRetry={retryLoad}
         />
       )}
 
