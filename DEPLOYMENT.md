@@ -62,6 +62,7 @@ Once deployed, Vercel will give you a URL like `https://rolldown-xxxx.vercel.app
 3. Set **Site URL** to your Vercel URL (e.g., `https://rolldown-xxxx.vercel.app`)
 4. Under **Redirect URLs**, add:
    - `https://rolldown-xxxx.vercel.app/**`
+   - A narrowly scoped preview pattern such as `https://rolldown-*-owensdereks-projects.vercel.app/**`
 5. Click **Save**
 
 ## Step 5: Test
