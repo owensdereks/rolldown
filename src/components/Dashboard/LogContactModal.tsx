@@ -12,18 +12,26 @@ interface LogContactModalProps {
   onSaved: () => Promise<void>
 }
 
-const CONTACT_TYPES: ContactLog['contact_type'][] = ['text', 'call', 'video']
+type LoggableContactType = Extract<ContactLog['contact_type'], 'text' | 'call' | 'video'>
+
+const CONTACT_TYPES: LoggableContactType[] = ['text', 'call', 'video']
 
 const CONTACT_TYPE_LABELS: Record<ContactLog['contact_type'], string> = {
   text: 'Text',
   call: 'Call',
   video: 'Video',
+  unknown: 'Unknown',
+  email: 'Legacy email',
+  other: 'Unknown method',
 }
 
 const CONTACT_TYPE_ICONS: Record<ContactLog['contact_type'], string> = {
   text: '💬',
   call: '📞',
   video: '▣',
+  unknown: '?',
+  email: '✉️',
+  other: '?',
 }
 
 const MAX_NOTES = 500
@@ -34,7 +42,7 @@ export default function LogContactModal({
   onClose,
   onSaved,
 }: LogContactModalProps) {
-  const [contactType, setContactType] = useState<ContactLog['contact_type']>('text')
+  const [contactType, setContactType] = useState<LoggableContactType>('text')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

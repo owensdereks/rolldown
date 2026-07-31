@@ -50,6 +50,7 @@ export async function getAthletes(coachId: string): Promise<AthleteWithPriority[
     .from('contact_logs')
     .select('*')
     .in('athlete_id', athleteIds)
+    .in('contact_type', ['text', 'call', 'video', 'other', 'unknown'])
     .order('contacted_at', { ascending: false })
 
   if (contactsErr) throw contactsErr

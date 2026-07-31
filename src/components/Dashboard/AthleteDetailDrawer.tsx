@@ -21,12 +21,18 @@ const CONTACT_TYPE_COLORS: Record<ContactLog['contact_type'], string> = {
   text: 'bg-accent',
   call: 'bg-signal-green',
   video: 'bg-signal-purple',
+  unknown: 'bg-ink-muted',
+  email: 'bg-ink-muted',
+  other: 'bg-ink-muted',
 }
 
 const CONTACT_TYPE_LABELS: Record<ContactLog['contact_type'], string> = {
   text: 'Text',
   call: 'Call',
   video: 'Video',
+  unknown: 'Unknown method',
+  email: 'Legacy email',
+  other: 'Unknown method',
 }
 
 const MAX_NOTES = 2000

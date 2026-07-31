@@ -16,6 +16,7 @@ Core workflows:
 - A priority-sorted focus list with an explanation for each athlete's position
 - One-click logging for the common text-conversation case, with undo
 - Call or video logging with optional notes
+- Legacy/imported methods are labeled rather than rewritten; legacy email does not satisfy conversation cadence
 - CSV roster import without inventing missing conversation history
 - Shared races, athlete rosters, race-weekend groups, and a monthly calendar
 

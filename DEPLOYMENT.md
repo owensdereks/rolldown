@@ -18,6 +18,19 @@ Afterward, confirm these tables exist:
 - `races`
 - `athlete_race_entries`
 
+### Existing restored Rolldown project
+
+The original project was restored on July 31, 2026. Its schema was initially created through the dashboard, so migrations `001` and `002` were never entered in Supabase's migration ledger. Migrations `003` and `004` were applied and verified through the SQL editor during recovery.
+
+Before using `supabase db push` against that specific project, obtain or reset its database password and reconcile the ledger once:
+
+```bash
+supabase migration repair --linked --status applied 001 002 003 004
+supabase db push --linked --dry-run
+```
+
+The dry run must report that the remote database is up to date before a real push is used.
+
 ## Step 2: Push to GitHub
 
 ```bash

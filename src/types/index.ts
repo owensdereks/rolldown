@@ -49,7 +49,7 @@ export interface ContactLog {
   athlete_id: string
   coach_id: string
   contacted_at: string
-  contact_type: 'text' | 'call' | 'video'
+  contact_type: 'text' | 'call' | 'video' | 'unknown' | 'email' | 'other'
   notes: string | null
   created_at: string
 }
