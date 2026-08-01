@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AthleteWithPriority, RaceWithAthletes } from '../../types'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
@@ -6,7 +6,7 @@ import OnboardingScreen from '../Onboarding/OnboardingScreen'
 import AthleteDetailDrawer from './AthleteDetailDrawer'
 import { createContactLog, deleteContactLog } from '../../services/api'
 import { dateOnlyToLocalDate, daysUntilDate, localDateKey } from '../../lib/dates'
-import { ArrowUpRight, CalendarDays, Check, FileUp, MessageSquare, Plus, RotateCcw } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Check, ChevronDown, FileUp, MessageSquare, Plus, RotateCcw, UserPlus } from 'lucide-react'
 
 interface PriorityListProps {
   athletes: AthleteWithPriority[]
@@ -148,6 +148,26 @@ export default function PriorityList({
   const [quickLoggingId, setQuickLoggingId] = useState<string | null>(null)
   const [quickLogResult, setQuickLogResult] = useState<{ id: string; athleteName: string } | null>(null)
   const [quickLogError, setQuickLogError] = useState<string | null>(null)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
+  const addMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!addMenuOpen) return
+
+    const closeMenu = (event: PointerEvent) => {
+      if (!addMenuRef.current?.contains(event.target as Node)) setAddMenuOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAddMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closeMenu)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeMenu)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [addMenuOpen])
 
   const handleQuickLog = async (athlete: AthleteWithPriority) => {
     if (quickLoggingId) return
@@ -268,15 +288,54 @@ export default function PriorityList({
               : `Your complete roster of ${athletes.length} athletes.`}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <Button onClick={onAddAthlete} icon={<Plus aria-hidden="true" size={17} />}>
+        <div ref={addMenuRef} className="relative flex flex-wrap items-center gap-2 sm:justify-end">
+          <Button
+            onClick={() => setAddMenuOpen((open) => !open)}
+            icon={<Plus aria-hidden="true" size={17} />}
+            aria-haspopup="menu"
+            aria-expanded={addMenuOpen}
+            aria-controls="add-athlete-menu"
+          >
             Add athlete
+            <ChevronDown aria-hidden="true" className={`transition-transform ${addMenuOpen ? 'rotate-180' : ''}`} size={15} />
           </Button>
+          {addMenuOpen && (
+            <div
+              id="add-athlete-menu"
+              role="menu"
+              className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-60 overflow-hidden rounded-xl border border-border bg-surface p-1.5 shadow-[0_18px_50px_rgba(24,35,29,0.16)]"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setAddMenuOpen(false)
+                  onAddAthlete()
+                }}
+                className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-ink transition-colors hover:bg-elevated focus-visible:bg-elevated"
+              >
+                <UserPlus aria-hidden="true" className="text-accent" size={17} />
+                Add manually
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setAddMenuOpen(false)
+                  onImportCSV()
+                }}
+                className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-ink transition-colors hover:bg-elevated focus-visible:bg-elevated"
+              >
+                <FileUp aria-hidden="true" className="text-accent" size={17} />
+                Import a roster
+              </button>
+            </div>
+          )}
         </div>
         </div>
       </header>
 
-      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_300px] xl:gap-12">
+      <div className={`grid items-start gap-8 ${upcomingRaces.length > 0 ? 'xl:grid-cols-[minmax(0,1fr)_300px] xl:gap-12' : ''}`}>
         <main className="min-w-0">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
@@ -416,7 +475,7 @@ export default function PriorityList({
       )}
         </main>
 
-        <aside className="order-first space-y-8 xl:order-none" aria-label="Race context and roster actions">
+        {upcomingRaces.length > 0 && <aside className="space-y-8" aria-label="Race context">
           {upcomingRaces.length > 0 && (
             <section aria-labelledby="race-weekends-title">
               <div className="mb-2 flex items-center justify-between">
@@ -438,15 +497,7 @@ export default function PriorityList({
             </section>
           )}
 
-          <section className="rounded-xl border border-border bg-surface p-5">
-            <p className="text-sm font-semibold text-ink">Roster</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">Add athletes one at a time or bring in an existing list.</p>
-            <div className="mt-4 grid gap-2">
-              <Button variant="secondary" onClick={onImportCSV} icon={<FileUp aria-hidden="true" size={16} />}>Import roster</Button>
-              <button onClick={() => onFilterChange('all')} className="min-h-11 text-sm font-semibold text-accent hover:text-accent-dark">View all {athletes.length} athletes</button>
-            </div>
-          </section>
-        </aside>
+        </aside>}
       </div>
 
       {/* Athlete Detail Drawer */}
