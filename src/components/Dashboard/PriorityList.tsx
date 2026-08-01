@@ -443,6 +443,7 @@ export default function PriorityList({
                       variant="secondary"
                       className="shrink-0 px-3 text-xs opacity-80 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                       icon={<MessageSquare aria-hidden="true" size={14} />}
+                      aria-label={`Log text conversation with ${athlete.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         void handleQuickLog(athlete)
