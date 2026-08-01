@@ -276,7 +276,7 @@ export default function PriorityList({
         </div>
       </header>
 
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:gap-12">
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_300px] xl:gap-12">
         <main className="min-w-0">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
@@ -416,7 +416,7 @@ export default function PriorityList({
       )}
         </main>
 
-        <aside className="order-first space-y-8 lg:order-none" aria-label="Race context and roster actions">
+        <aside className="order-first space-y-8 xl:order-none" aria-label="Race context and roster actions">
           {upcomingRaces.length > 0 && (
             <section aria-labelledby="race-weekends-title">
               <div className="mb-2 flex items-center justify-between">
