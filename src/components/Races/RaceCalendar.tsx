@@ -97,19 +97,19 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
           <h2 className="page-title">{monthLabel}</h2>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onBack} className="mr-1 flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-ink-dim transition-colors hover:bg-white/[0.05] hover:text-ink">
+          <button onClick={onBack} className="mr-1 flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-ink-dim transition-colors hover:bg-elevated hover:text-ink">
             <ArrowLeft aria-hidden="true" size={16} /> Back
           </button>
           <button
             onClick={prevMonth}
-            className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-white/[0.08] bg-elevated text-ink-dim transition-colors hover:border-white/[0.14] hover:text-ink"
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-border bg-surface text-ink-dim transition-colors hover:border-ink/25 hover:text-ink"
             aria-label="Previous month"
           >
             <ChevronLeft aria-hidden="true" size={18} />
           </button>
           <button
             onClick={nextMonth}
-            className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-white/[0.08] bg-elevated text-ink-dim transition-colors hover:border-white/[0.14] hover:text-ink"
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-border bg-surface text-ink-dim transition-colors hover:border-ink/25 hover:text-ink"
             aria-label="Next month"
           >
             <ChevronRight aria-hidden="true" size={18} />
@@ -132,13 +132,13 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-surface">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {/* Day-of-week header */}
-          <div className="grid grid-cols-7 border-b border-white/[0.07] bg-elevated/50">
+          <div className="grid grid-cols-7 border-b border-border bg-elevated/50">
             {DAY_LABELS.map(label => (
               <div
                 key={label}
-                className="border-r border-white/[0.06] py-2.5 text-center text-[11px] font-medium text-ink-muted last:border-r-0"
+                className="border-r border-border py-2.5 text-center text-[11px] font-medium text-ink-muted last:border-r-0"
               >
                 {label}
               </div>
@@ -147,13 +147,13 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
 
           {/* Week rows */}
           {weeks.map((week, wi) => (
-            <div key={wi} className="grid grid-cols-7 border-b border-white/[0.06] last:border-b-0">
+            <div key={wi} className="grid grid-cols-7 border-b border-border last:border-b-0">
               {week.map((day, di) => {
                 if (!day) {
                   return (
                     <div
                       key={di}
-                      className="min-h-[92px] border-r border-white/[0.06] bg-bg/25 p-2 last:border-r-0"
+                      className="min-h-[92px] border-r border-border bg-bg/35 p-2 last:border-r-0"
                     />
                   )
                 }
@@ -167,7 +167,7 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
                   <div
                     key={di}
                     className={[
-                      'min-h-[92px] border-r border-white/[0.06] p-2 last:border-r-0',
+                      'min-h-[92px] border-r border-border p-2 last:border-r-0',
                       isToday ? 'bg-accent/[0.055]' : '',
                       !isCurrentMonth ? 'opacity-30' : '',
                     ].join(' ')}

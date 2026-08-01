@@ -87,7 +87,7 @@ export default function LogContactModal({
               className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border py-3 text-xs font-medium transition-colors duration-150 ${
                 contactType === type
                   ? 'border-accent/30 bg-accent/10 text-accent'
-                  : 'border-white/[0.07] bg-surface text-ink-dim hover:border-white/[0.13] hover:text-ink'
+                  : 'border-border bg-surface text-ink-dim hover:border-ink/25 hover:text-ink'
               }`}
               onClick={() => setContactType(type)}
             >

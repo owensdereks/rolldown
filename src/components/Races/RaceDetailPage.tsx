@@ -111,7 +111,7 @@ export default function RaceDetailPage({
       <div>
         <button
           onClick={onBack}
-          className="mb-6 flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-ink-muted transition-colors hover:bg-white/[0.04] hover:text-ink"
+          className="mb-6 flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
         >
           <ArrowLeft aria-hidden="true" size={16} /> Back
         </button>
@@ -190,7 +190,7 @@ export default function RaceDetailPage({
             {race.athletes.map(athlete => (
               <div
                 key={athlete.id}
-                className="flex items-center justify-between border-b border-white/[0.06] bg-surface px-4 py-3 last:border-0"
+                className="flex items-center justify-between border-b border-border bg-surface px-4 py-3 last:border-0"
               >
                 <span className="text-sm font-semibold text-ink">{athlete.name}</span>
                 <Button
@@ -217,7 +217,7 @@ export default function RaceDetailPage({
             <select
               value={selectedAthleteId}
               onChange={e => setSelectedAthleteId(e.target.value)}
-              className="min-h-11 flex-1 rounded-[10px] border border-white/[0.08] bg-elevated px-3.5 py-2.5 text-sm text-ink transition-colors hover:border-white/[0.14] focus:border-accent/60"
+              className="min-h-11 flex-1 rounded-[10px] border border-border bg-elevated px-3.5 py-2.5 text-sm text-ink transition-colors hover:border-ink/25 focus:border-accent/60"
             >
               <option value="">Select an athlete…</option>
               {unenrolled.map(a => (

@@ -13,10 +13,10 @@ export default function OnboardingScreen({
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="max-w-md text-center">
-        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-elevated text-accent">
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-elevated text-accent">
           <UsersRound aria-hidden="true" size={25} strokeWidth={1.6} />
         </div>
-        <h2 className="mb-2 text-2xl font-semibold tracking-[-0.03em] text-ink">
+        <h2 className="mb-2 font-serif text-3xl font-semibold tracking-[-0.04em] text-ink">
           Build your athlete roster
         </h2>
         <p className="mb-8 text-[15px] leading-relaxed text-ink-dim">

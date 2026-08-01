@@ -214,7 +214,7 @@ export default function EditAthleteForm({
           onChange={(e) => setCoachingStartDate(e.target.value)}
         />
 
-        <div className="border-t border-white/[0.07] pt-5">
+        <div className="border-t border-border pt-5">
           <p className="section-label mb-3">
             Races
           </p>
@@ -223,7 +223,7 @@ export default function EditAthleteForm({
               {races.map((race) => (
                 <div
                   key={race.id}
-                  className="flex items-center justify-between rounded-[10px] border border-white/[0.07] bg-elevated px-3.5 py-3"
+                  className="flex items-center justify-between rounded-[10px] border border-border bg-elevated px-3.5 py-3"
                 >
                   <div>
                     <p className="text-sm text-ink">{race.name}</p>
@@ -294,7 +294,7 @@ export default function EditAthleteForm({
           <p className="text-xs text-signal-red">{errors.form}</p>
         )}
 
-        <div className="flex items-center justify-end gap-3 border-t border-white/[0.07] pt-5">
+        <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
           <Button variant="secondary" type="button" onClick={onCancel}>
             Cancel
           </Button>
@@ -303,7 +303,7 @@ export default function EditAthleteForm({
           </Button>
         </div>
 
-        <div className="mt-6 border-t border-white/[0.07] pt-5">
+        <div className="mt-6 border-t border-border pt-5">
           <Button
             variant="danger"
             type="button"

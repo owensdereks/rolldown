@@ -273,7 +273,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
         <div className="panel overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.07] bg-elevated/50">
+              <tr className="border-b border-border bg-elevated/50">
                 {['Row', 'Name', 'Email', 'Phone', 'Start Date', 'Last Contact', 'Race', 'Status'].map(
                   (h) => (
                     <th
@@ -290,7 +290,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
               {rows.map((row) => (
                 <tr
                   key={row.rowNumber}
-                  className="border-b border-white/[0.06] transition-colors last:border-0 hover:bg-white/[0.025]"
+                  className="border-b border-border transition-colors last:border-0 hover:bg-elevated/45"
                 >
                   <td className="px-4 py-3 text-xs tabular-nums text-ink-muted">{row.rowNumber}</td>
                   <td className="py-3 px-4 font-medium text-ink">{row.name || '—'}</td>
@@ -376,7 +376,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
           className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 cursor-pointer ${
             dragOver
               ? 'border-accent/50 bg-accent/5'
-              : 'border-white/[0.1] hover:border-white/[0.18] hover:bg-white/[0.02]'
+              : 'border-border hover:border-ink/25 hover:bg-elevated/45'
           }`}
           onDragOver={(e) => {
             e.preventDefault()

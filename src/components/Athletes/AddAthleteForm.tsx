@@ -135,7 +135,7 @@ export default function AddAthleteForm({
           onChange={(e) => setCoachingStartDate(e.target.value)}
         />
 
-        <div className="border-t border-white/[0.07] pt-5">
+        <div className="border-t border-border pt-5">
           <p className="section-label mb-3">
             Upcoming race
           </p>
@@ -179,7 +179,7 @@ export default function AddAthleteForm({
           <p className="text-xs text-signal-red">{errors.form}</p>
         )}
 
-        <div className="flex items-center justify-end gap-3 border-t border-white/[0.07] pt-5">
+        <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
           <Button variant="secondary" type="button" onClick={onCancel}>Cancel</Button>
           <Button type="submit" disabled={saving} icon={!saving ? <Save aria-hidden="true" size={16} /> : undefined}>
             {saving ? 'Saving…' : 'Save athlete'}

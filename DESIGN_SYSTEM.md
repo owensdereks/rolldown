@@ -1,67 +1,84 @@
-# Rolldown design system
+# Rolldown brand and interface guide
 
-Rolldown is a calm, premium coaching workspace. It should feel focused at 6am, remain easy to scan with 15–25 athletes, and use visual emphasis only when it helps a coach decide what to do next.
+Rolldown is an endurance-editorial relationship workspace for coaches. The product should feel personal, considered, and useful before it feels technical. It borrows the clarity of a well-edited training journal—not the visual language of a metrics dashboard.
 
-## Principles
+## Brand idea
 
-- **Quiet hierarchy.** Typography and spacing create structure before borders or color.
-- **Operational, not promotional.** Controls are direct, copy is concise, and decoration stays restrained.
-- **Status color has meaning.** Red, amber, and green indicate follow-up health; blue identifies actions; purple is limited to race context.
-- **One surface, one purpose.** Prefer dividers and grouped regions over nested cards.
-- **Accessible by default.** Body copy is at least 14px, interactive targets are at least 44px, focus is visible, and motion respects reduced-motion preferences.
+**Promise:** Know who needs you today.
 
-## Foundations
+**Personality:** observant, steady, warm, direct, quietly confident.
 
-### Color
+**Voice:** Write like an experienced coach: concise, specific, and human. Prefer “Last spoke 8 days ago” to “Engagement overdue.” Avoid inflated software language such as “command center,” “unlock insights,” “optimize performance,” and “supercharge.”
+
+## Logo
+
+The Rolling R is a continuous course line forming a lowercase-inspired `R`. Its orange forward leg represents movement, cadence, and the next useful action. The lowercase wordmark keeps the identity approachable.
+
+- Use the full lockup in navigation, sign-in, marketing headers, and documents.
+- Use the symbol alone for the favicon, app icon, and spaces narrower than 120px.
+- Use the reversed asset on green-black only. Use the monochrome mark where reproduction requires one color.
+- Minimum symbol size is 24px digital or 7mm print.
+- Keep clear space equal to half the symbol width on every side.
+- Do not rotate, outline, recolor individual strokes, add shadows, place on noisy imagery, or typeset a substitute wordmark.
+
+Assets: `brand-mark.svg`, `brand-mark-reversed.svg`, `brand-mark-mono.svg`, and `favicon.svg` in `public/`.
+
+## Color
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `bg` | `#0B0D10` | App background |
-| `surface` | `#12161B` | Primary panels and rows |
-| `elevated` | `#191E25` | Inputs, selected controls, modal surfaces |
-| `border` | `#252B34` | Low-contrast boundaries |
-| `ink` | `#F1F3F5` | Primary text |
-| `ink-dim` | `#A4ADB9` | Secondary text |
-| `ink-muted` | `#747E8B` | Metadata and labels |
-| `accent` | `#78A6FF` | Primary actions and focus |
-| `signal-red` | `#E66F79` | Overdue and destructive states |
-| `signal-amber` | `#D6A85F` | Due-soon and warning states |
-| `signal-green` | `#69B68D` | Healthy and successful states |
-| `signal-purple` | `#A897D4` | Race context only |
+| Bone canvas | `#F5F1E8` | Page background |
+| Paper | `#FCFAF5` | Primary surfaces and sheets |
+| Green-black ink | `#18231D` | Primary text and navigation |
+| Muted ink | `#687169` | Secondary copy |
+| Soft border | `#DCD7CC` | Dividers and quiet boundaries |
+| Raised paper | `#EFE9DD` | Selected controls and soft fills |
+| Race orange | `#E85D32` | Primary action, focus, brand motion |
+| Dark orange | `#B83E1C` | Hover and pressed action state |
+| Moss | `#6C7F69` | Supporting illustration and quiet context |
+| Cadence red | `#C44942` | Overdue and destructive meaning only |
+| Cadence amber | `#A96F1F` | Due-soon and warning meaning only |
+| Cadence green | `#3F745C` | Healthy and success meaning only |
 
-Borders normally use translucent white (`6–9%`) so surfaces remain legible without looking boxed in. Glows and saturated gradients are not part of the system.
+Orange identifies action, never alarm. Red, amber, and green appear as small dots, text, or compact lozenges. Do not use neon colors, luminous glows, or ornamental gradients.
 
-### Typography
+## Typography
 
-- Outfit is the UI family at weights 400–700.
-- Barlow Condensed is reserved for the Rolldown wordmark.
-- Page titles use sentence case, 28–36px, weight 600, and tight tracking.
-- Section titles use 16px/600. Body copy uses 14–16px. Labels and metadata use 12–13px.
-- Use tabular numerals for day counts, dates, counters, and other aligned metrics.
-- Avoid all-caps and wide tracking except the uppercase wordmark.
+- **Newsreader** is the editorial voice. Use it selectively for the sign-in statement, page titles, and major empty-state headings.
+- **DM Sans** handles navigation, controls, tables, labels, body copy, and the custom lowercase wordmark.
+- Display: 32–48px, 500–600 weight, tight tracking, sentence case.
+- Body: 14–16px, 400–500 weight, 1.5–1.65 line height.
+- Metadata: 11–13px. Uppercase is limited to short date or section kickers.
+- Use tabular numerals for dates, day counts, and aligned metrics. Do not add a monospace family.
 
-### Shape and spacing
+## Layout and components
 
-- Controls: 44px minimum height and 10px radius.
-- Panels: 14px radius with a subtle 1px border.
-- Modals and large states: 16px radius and the shared panel shadow.
-- Standard page gutter: responsive from 16px to 32px.
-- Standard content width: 1152px (`max-w-6xl`).
-- UI transitions: 150–200ms color or transform transitions, disabled when reduced motion is requested.
+- Desktop uses a fixed 216px green-black workspace sidebar and a fluid content canvas capped at 1320px.
+- The Today view is a two-column workspace: relationship queue first, upcoming races and roster actions second. Below 1024px the context rail moves above the queue.
+- Lists use one paper surface, neutral dividers, stable columns, and generous row rhythm. Avoid grids of floating cards.
+- Controls have a minimum 44px touch target and 10px radius. Primary buttons are orange; secondary buttons are paper with a soft border.
+- Drawers are paper-like profile sheets with sticky identity and action regions. Modals use the same surface over a translucent green-black overlay.
+- Forms group related information with spacing and dividers instead of nested boxes. Fields stack on small screens.
+- Icons come from Lucide at 1.7–1.9 stroke weight. An icon-only control always has an accessible label.
 
-## Components
+## Interaction and accessibility
 
-- **Buttons:** primary blue, neutral secondary, and low-chroma destructive. Icons are optional and always come from Lucide.
-- **Inputs:** elevated charcoal surface, visible hover/focus border, 15px input text, labels above the field.
-- **Badges:** compact status indicators. Do not use badges for ordinary metadata when plain text is clearer.
-- **Panels and lists:** use one outer panel with row dividers. Avoid making every row a separate card.
-- **Page headers:** contextual label and title on the left; page-level actions on the right; stack on mobile.
-- **Overlays:** neutral dark backdrop, subtle blur, restrained shadow, and clear close control.
-- **Feedback:** inline alerts for recoverable errors and a single bottom toast for successful quick actions.
+- Hover states change color or surface only; they never shift layout.
+- Focus uses a visible 3px translucent orange ring.
+- Standard transitions last 150–200ms. The drawer may use a restrained 200ms transform.
+- Honor `prefers-reduced-motion` by effectively removing animation and smooth scrolling.
+- Meet WCAG AA contrast for text, retain complete keyboard operation, and prevent horizontal page overflow at 390px.
 
-## Responsive behavior
+## Illustration and imagery
 
-- Page headers and form grids stack below 640px.
-- Secondary roster metadata may collapse, but every action remains accessible.
-- Tables scroll horizontally instead of compressing columns beyond readability.
-- The athlete drawer fills small screens and is capped at 500px on larger screens.
+Use abstract course lines, rolling contours, elevation traces, and tactile paper texture. Favor editorial diagrams over literal sports imagery. Avoid stock athletes, finish-line clichés, glossy 3D objects, generic dashboard illustrations, and decorative AI imagery that does not explain or reinforce the brand.
+
+## Copy examples
+
+- “Who needs you today”
+- “3 athletes have a reason to check in.”
+- “Last spoke 12 days ago”
+- “No conversations yet”
+- “Import roster”
+
+Keep actions literal: “Add athlete,” “Log conversation,” “View race,” “Try again.”

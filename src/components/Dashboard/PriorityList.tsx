@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import type { AthleteWithPriority, RaceWithAthletes } from '../../types'
 import Button from '../ui/Button'
-import Badge from '../ui/Badge'
 import EmptyState from '../ui/EmptyState'
 import OnboardingScreen from '../Onboarding/OnboardingScreen'
 import AthleteDetailDrawer from './AthleteDetailDrawer'
 import { createContactLog, deleteContactLog } from '../../services/api'
 import { dateOnlyToLocalDate, daysUntilDate, localDateKey } from '../../lib/dates'
-import { CalendarDays, Check, FileUp, MessageSquare, Plus, RotateCcw, Users } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Check, FileUp, MessageSquare, Plus, RotateCcw } from 'lucide-react'
 
 interface PriorityListProps {
   athletes: AthleteWithPriority[]
@@ -21,22 +20,27 @@ interface PriorityListProps {
   onViewRace: (raceId: string) => void
   error: string | null
   onRetry: () => void
+  filter: FilterMode
+  onFilterChange: (filter: FilterMode) => void
 }
 
-type FilterMode = 'needs-attention' | 'all'
+export type FilterMode = 'needs-attention' | 'all'
 
 const severityConfig = {
   red: {
-    bar: '#FF3B52',
+    dot: 'bg-signal-red',
     textClass: 'text-signal-red',
+    label: 'Needs contact',
   },
   yellow: {
-    bar: '#FFAD2E',
+    dot: 'bg-signal-amber',
     textClass: 'text-signal-amber',
+    label: 'Due soon',
   },
   green: {
-    bar: '#00D977',
+    dot: 'bg-signal-green',
     textClass: 'text-signal-green',
+    label: 'On cadence',
   },
 }
 
@@ -48,8 +52,7 @@ function filterNeedsAttention(athletes: AthleteWithPriority[]): AthleteWithPrior
 
 function SkeletonRow() {
   return (
-    <div className="flex animate-pulse items-center border-b border-white/[0.06] bg-surface last:border-0">
-      <div className="w-1 self-stretch bg-elevated" />
+    <div className="flex animate-pulse items-center border-b border-border bg-surface last:border-0">
       <div className="flex flex-1 items-center justify-between px-5 py-4">
         <div className="space-y-2">
           <div className="h-4 w-36 bg-elevated rounded-md" />
@@ -101,50 +104,26 @@ function RaceCard({
   onViewRace: (raceId: string) => void
 }) {
   const days = daysUntilRace(race.date)
-  const visibleAthletes = race.athletes.slice(0, 3)
-  const overflow = race.athletes.length - visibleAthletes.length
-
   return (
     <button
       onClick={() => onViewRace(race.id)}
-      className="group flex w-52 shrink-0 items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5 text-left transition-colors duration-150 hover:border-white/[0.12] hover:bg-white/[0.04]"
+      className="group flex w-full items-start gap-3 border-b border-border py-4 text-left transition-colors last:border-0 hover:text-accent"
     >
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-        <CalendarDays aria-hidden="true" size={16} strokeWidth={1.8} />
+      <div className="mt-0.5 min-w-12 text-center">
+        <span className="block font-serif text-2xl leading-none text-ink tabular-nums">{dateOnlyToLocalDate(race.date).getDate()}</span>
+        <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-accent">
+          {dateOnlyToLocalDate(race.date).toLocaleDateString('en-US', { month: 'short' })}
+        </span>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-ink">{race.name}</p>
-        <p className="mt-0.5 text-xs text-ink-muted">
-          {formatShortDate(race.date)} · {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`}
-        </p>
-        <p className="mt-2 text-xs text-ink-dim">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold leading-snug text-ink group-hover:text-accent">{race.name}</p>
+          <ArrowUpRight aria-hidden="true" className="mt-0.5 shrink-0 text-ink-muted" size={15} />
+        </div>
+        <p className="mt-1 text-xs text-ink-muted">
+          {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`} ·{' '}
           {race.athletes.length} athlete{race.athletes.length !== 1 ? 's' : ''}
         </p>
-        {race.athletes.length > 0 && (
-        <div className="mt-2 flex items-center gap-1">
-          {visibleAthletes.map(a => {
-            const initials = a.name
-              .split(' ')
-              .map(p => p[0] ?? '')
-              .join('')
-              .slice(0, 2)
-              .toUpperCase()
-            return (
-              <div
-                key={a.id}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-bg"
-              >
-                <span className="text-[9px] font-semibold text-accent">{initials}</span>
-              </div>
-            )
-          })}
-          {overflow > 0 && (
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-bg">
-              <span className="text-[9px] text-ink-dim">+{overflow}</span>
-            </div>
-          )}
-        </div>
-        )}
       </div>
     </button>
   )
@@ -162,8 +141,9 @@ export default function PriorityList({
   onViewRace,
   error,
   onRetry,
+  filter,
+  onFilterChange,
 }: PriorityListProps) {
-  const [filter, setFilter] = useState<FilterMode>('needs-attention')
   const [drawerAthlete, setDrawerAthlete] = useState<AthleteWithPriority | null>(null)
   const [quickLoggingId, setQuickLoggingId] = useState<string | null>(null)
   const [quickLogResult, setQuickLogResult] = useState<{ id: string; athleteName: string } | null>(null)
@@ -253,6 +233,12 @@ export default function PriorityList({
 
   const filtered = filter === 'needs-attention' ? filterNeedsAttention(athletes) : athletes
   const showAllCaughtUp = filter === 'needs-attention' && filtered.length === 0
+  const today = new Date()
+  const dateLabel = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
 
   return (
     <div>
@@ -271,67 +257,47 @@ export default function PriorityList({
         </div>
       )}
 
-      {/* Race feed */}
-      {upcomingRaces.length > 0 && (
-        <section className="mb-10" aria-labelledby="race-weekends-title">
-          <div className="mb-4 flex items-center gap-2.5">
-            <CalendarDays aria-hidden="true" className="text-ink-muted" size={17} strokeWidth={1.8} />
-            <h2 id="race-weekends-title" className="section-title">Race weekends</h2>
-          </div>
-          <div className="space-y-5">
-            {raceWeekends.map(([key, races]) => (
-              <section key={key} aria-labelledby={`weekend-${key}`}>
-                <p id={`weekend-${key}`} className="mb-2 text-xs font-medium text-ink-muted">
-                  {weekendLabel(key)}
-                </p>
-                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-                  {races.map((race) => (
-                    <RaceCard key={race.id} race={race} onViewRace={onViewRace} />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <div className="page-header">
+      <header className="mb-8 border-b border-border pb-7 sm:mb-10 sm:pb-9">
+        <p className="mb-3 text-sm font-semibold text-accent">{dateLabel}</p>
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <div className="mb-2 flex items-center gap-2.5 text-ink-muted">
-            <Users aria-hidden="true" size={17} strokeWidth={1.8} />
-            <span className="page-eyebrow">Athlete roster</span>
-          </div>
           <h2 className="page-title">Who needs you today</h2>
-          <p className="mt-2 text-sm text-ink-muted">
-            Showing {filtered.length} of {athletes.length} athletes
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
+            {filter === 'needs-attention'
+              ? `${filtered.length} of ${athletes.length} athletes have a reason to check in.`
+              : `Your complete roster of ${athletes.length} athletes.`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <Button variant="secondary" onClick={onImportCSV} icon={<FileUp aria-hidden="true" size={16} />}>
-            Import CSV
-          </Button>
           <Button onClick={onAddAthlete} icon={<Plus aria-hidden="true" size={17} />}>
             Add athlete
           </Button>
         </div>
-      </div>
+        </div>
+      </header>
 
-      <div className="mb-3 flex items-center justify-between gap-4">
-        <div className="flex items-center rounded-[10px] border border-white/[0.07] bg-surface p-1">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:gap-12">
+        <main className="min-w-0">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-ink">Priority queue</h3>
+            <p className="mt-1 text-xs text-ink-muted">Ordered by coaching cadence and race proximity</p>
+          </div>
+        <div className="flex items-center rounded-lg border border-border bg-surface p-1">
           <button
             className={`min-h-9 rounded-lg px-3 text-sm font-medium transition-colors ${filter === 'needs-attention' ? 'bg-elevated text-ink shadow-sm' : 'text-ink-muted hover:text-ink'}`}
-            onClick={() => setFilter('needs-attention')}
+            onClick={() => onFilterChange('needs-attention')}
           >
             Needs attention
           </button>
           <button
             className={`min-h-9 rounded-lg px-3 text-sm font-medium transition-colors ${filter === 'all' ? 'bg-elevated text-ink shadow-sm' : 'text-ink-muted hover:text-ink'}`}
-            onClick={() => setFilter('all')}
+            onClick={() => onFilterChange('all')}
           >
             All athletes
           </button>
         </div>
-      </div>
+        </div>
 
       {/* All caught up */}
       {showAllCaughtUp && (
@@ -343,14 +309,14 @@ export default function PriorityList({
             heading="All caught up"
             description="Every athlete has been contacted recently. Solid work."
             actionLabel="View all athletes"
-            onAction={() => setFilter('all')}
+            onAction={() => onFilterChange('all')}
           />
         </div>
       )}
 
       {/* Athlete rows */}
       {!showAllCaughtUp && (
-        <div className="panel overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {filtered.map((athlete) => {
             const cfg = severityConfig[athlete.severity]
             const raceDaysAway = athlete.upcoming_race
@@ -360,7 +326,7 @@ export default function PriorityList({
             return (
               <div
                 key={athlete.id}
-                className="group relative flex cursor-pointer items-stretch border-b border-white/[0.06] bg-surface transition-colors duration-150 last:border-0 hover:bg-white/[0.025]"
+                className="group relative flex cursor-pointer items-stretch border-b border-border bg-surface transition-colors duration-150 last:border-0 hover:bg-elevated/45 focus-visible:bg-elevated/45"
                 onClick={() => setDrawerAthlete(athlete)}
                 role="button"
                 tabIndex={0}
@@ -371,14 +337,13 @@ export default function PriorityList({
                   }
                 }}
               >
-                <div
-                  className="w-1 shrink-0 opacity-80"
-                  style={{ backgroundColor: cfg.bar }}
-                />
-
-                <div className="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 py-4 sm:px-5">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 py-4 sm:gap-5 sm:px-5">
+                  <div className="flex min-w-0 flex-1 items-center gap-3.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-elevated text-xs font-bold text-ink">
+                      {athlete.name.split(' ').map((part) => part[0] ?? '').join('').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5">
                       <span className="truncate text-[15px] font-semibold text-ink">
                         {athlete.name}
                       </span>
@@ -388,60 +353,48 @@ export default function PriorityList({
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 truncate text-xs text-ink-muted">
+                    <div className="mt-1.5 flex items-center gap-2 text-xs">
+                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${cfg.dot}`} />
+                      <span className={cfg.textClass}>{cfg.label}</span>
+                      <span aria-hidden="true" className="text-border">·</span>
+                      <span className="truncate text-ink-muted">
                       {athlete.days_since_last_contact === null
                         ? 'No conversation logged'
                         : athlete.days_since_last_contact > 0
-                        ? `Last conversation ${athlete.days_since_last_contact}d ago`
+                        ? `Last spoke ${athlete.days_since_last_contact}d ago`
                         : athlete.days_since_last_contact === 0
-                          ? 'Conversation today'
+                          ? 'Spoke today'
                           : 'No conversation logged'}
-                    </p>
+                      </span>
+                    </div>
                     {athlete.upcoming_race && raceDaysAway !== null && (
-                      <p className="mt-1 truncate text-xs text-ink-dim sm:hidden">
-                        {athlete.upcoming_race.name} · {raceDaysAway}d
+                      <p className="mt-1.5 truncate text-xs text-ink-dim">
+                        {athlete.upcoming_race.name} · {raceDaysAway === 0 ? 'today' : `${raceDaysAway}d`}
                       </p>
                     )}
+                    </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-3">
-                    {athlete.upcoming_race && raceDaysAway !== null && (
-                      <span className="hidden sm:inline-flex">
-                        <Badge variant="race">
-                        {athlete.upcoming_race.name} — {raceDaysAway}d
-                        </Badge>
-                      </span>
-                    )}
-
+                  <div className="flex shrink-0 items-center gap-2 sm:gap-4">
                     {athlete.days_since_last_contact === null ? (
-                      <div className="w-12 text-right">
-                        <span className="text-xs font-medium text-signal-red">
-                          Unknown
-                        </span>
+                      <div className="hidden w-16 text-right sm:block">
+                        <span className="text-xs text-ink-muted">—</span>
                       </div>
                     ) : athlete.days_since_last_contact === 0 ? (
-                      <div className="w-12 text-right">
-                        <span className="inline-flex items-center rounded-full border border-signal-green/15 bg-signal-green/10 px-2 py-1 text-[11px] font-medium text-signal-green">
-                          Today
-                        </span>
+                      <div className="hidden w-16 text-right sm:block">
+                        <span className="text-xs font-semibold text-signal-green">Today</span>
                       </div>
                     ) : (
-                      <div className="w-12 shrink-0 text-right tabular-nums">
-                        <span
-                          className={`text-2xl font-semibold leading-none tracking-[-0.04em] ${cfg.textClass}`}
-                        >
-                          {athlete.days_since_last_contact}
-                        </span>
-                        <p className="mt-0.5 text-[11px] text-ink-muted">
-                          days
-                        </p>
+                      <div className="hidden w-16 shrink-0 text-right tabular-nums sm:block">
+                        <span className="text-sm font-semibold text-ink">{athlete.days_since_last_contact}d</span>
+                        <p className="mt-0.5 text-[10px] text-ink-muted">since contact</p>
                       </div>
                     )}
 
                     {/* The most common workflow is intentionally one click. */}
                     <Button
                       variant="secondary"
-                      className="shrink-0 px-3 text-xs opacity-80 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                      className="shrink-0 px-3 text-xs sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                       icon={<MessageSquare aria-hidden="true" size={14} />}
                       aria-label={`Log text conversation with ${athlete.name}`}
                       onClick={(e) => {
@@ -461,6 +414,40 @@ export default function PriorityList({
           })}
         </div>
       )}
+        </main>
+
+        <aside className="order-first space-y-8 lg:order-none" aria-label="Race context and roster actions">
+          {upcomingRaces.length > 0 && (
+            <section aria-labelledby="race-weekends-title">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <CalendarDays aria-hidden="true" className="text-accent" size={17} strokeWidth={1.8} />
+                  <h2 id="race-weekends-title" className="text-sm font-semibold text-ink">Race weekends</h2>
+                </div>
+              </div>
+              {raceWeekends.map(([key, races]) => (
+                <section key={key} className="mt-5" aria-labelledby={`weekend-${key}`}>
+                  <p id={`weekend-${key}`} className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-muted">
+                    {weekendLabel(key)}
+                  </p>
+                  <div className="mt-1">
+                    {races.map((race) => <RaceCard key={race.id} race={race} onViewRace={onViewRace} />)}
+                  </div>
+                </section>
+              ))}
+            </section>
+          )}
+
+          <section className="rounded-xl border border-border bg-surface p-5">
+            <p className="text-sm font-semibold text-ink">Roster</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">Add athletes one at a time or bring in an existing list.</p>
+            <div className="mt-4 grid gap-2">
+              <Button variant="secondary" onClick={onImportCSV} icon={<FileUp aria-hidden="true" size={16} />}>Import roster</Button>
+              <button onClick={() => onFilterChange('all')} className="min-h-11 text-sm font-semibold text-accent hover:text-accent-dark">View all {athletes.length} athletes</button>
+            </div>
+          </section>
+        </aside>
+      </div>
 
       {/* Athlete Detail Drawer */}
       {drawerAthlete && (
@@ -480,9 +467,9 @@ export default function PriorityList({
       {quickLogResult && (
         <div
           role="status"
-          className="fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 items-center gap-4 rounded-xl border border-white/[0.09] bg-elevated px-4 py-3 shadow-2xl"
+          className="fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 items-center gap-4 rounded-xl border border-border bg-ink px-4 py-3 shadow-2xl"
         >
-          <span className="text-sm text-ink">
+          <span className="text-sm text-white">
             Text conversation logged for {quickLogResult.athleteName}.
           </span>
           <button

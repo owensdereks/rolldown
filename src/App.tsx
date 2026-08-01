@@ -28,6 +28,7 @@ function AuthenticatedApp() {
   const [loadingData, setLoadingData] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [mainFilter, setMainFilter] = useState<'needs-attention' | 'all'>('needs-attention')
 
   useEffect(() => {
     if (!user) return
@@ -93,8 +94,21 @@ function AuthenticatedApp() {
   return (
     <AppShell
       coachName={coach?.name ?? user?.email ?? ''}
+      activeNav={
+        view.page === 'race-calendar' || view.page === 'race-detail'
+          ? 'calendar'
+          : view.page === 'csv-import'
+            ? 'import'
+            : view.page === 'main'
+              ? mainFilter === 'all' ? 'athletes' : 'today'
+              : 'other'
+      }
+      athleteCount={athletes.length}
       onLogout={signOut}
       onViewCalendar={() => setView({ page: 'race-calendar' })}
+      onViewToday={() => { setMainFilter('needs-attention'); setView({ page: 'main' }) }}
+      onViewAthletes={() => { setMainFilter('all'); setView({ page: 'main' }) }}
+      onImportRoster={() => setView({ page: 'csv-import' })}
     >
       {view.page === 'main' && (
         <PriorityList
@@ -109,6 +123,8 @@ function AuthenticatedApp() {
           onViewRace={(raceId) => setView({ page: 'race-detail', raceId })}
           error={dataError}
           onRetry={retryLoad}
+          filter={mainFilter}
+          onFilterChange={setMainFilter}
         />
       )}
 

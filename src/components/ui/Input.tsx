@@ -30,7 +30,7 @@ export function Input({
       <input
         id={id}
         className={`min-h-11 w-full rounded-[10px] border bg-elevated px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-muted/70 transition-colors ${
-          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-white/[0.08] hover:border-white/[0.14] focus:border-accent/60'
+          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-border hover:border-ink/25 focus:border-accent/70'
         } ${className}`}
         {...props}
       />
@@ -59,7 +59,7 @@ export function Textarea({
       <textarea
         id={id}
         className={`w-full resize-none rounded-[10px] border bg-elevated px-3.5 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted/70 transition-colors ${
-          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-white/[0.08] hover:border-white/[0.14] focus:border-accent/60'
+          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-border hover:border-ink/25 focus:border-accent/70'
         } ${className}`}
         {...props}
       />

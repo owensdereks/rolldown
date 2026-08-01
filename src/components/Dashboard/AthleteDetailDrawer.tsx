@@ -244,7 +244,7 @@ export default function AthleteDetailDrawer({
         className={`fixed inset-0 z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0'
         }`}
-        style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        style={{ backgroundColor: 'rgba(24,35,29,0.42)', backdropFilter: 'blur(3px)' }}
         onClick={handleClose}
       />
 
@@ -257,18 +257,14 @@ export default function AthleteDetailDrawer({
         className={`fixed inset-y-0 right-0 z-40 flex w-full flex-col transition-transform duration-200 ease-out sm:max-w-[500px] ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
-        style={{
-          backgroundColor: '#12161B',
-          borderLeft: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '-24px 0 70px rgba(0,0,0,0.38)',
-        }}
+        style={{ backgroundColor: '#FCFAF5', borderLeft: '1px solid #DCD7CC', boxShadow: '-24px 0 70px rgba(24,35,29,0.18)' }}
       >
         {/* Header */}
-        <div className="shrink-0 border-b border-white/[0.07] px-5 py-5 sm:px-6">
+        <div className="shrink-0 border-b border-border px-5 py-5 sm:px-6">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <p className="page-eyebrow mb-1">Athlete profile</p>
-              <h2 className="truncate text-2xl font-semibold tracking-[-0.03em] text-ink">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.12em] text-accent">Athlete profile</p>
+              <h2 className="truncate font-serif text-3xl font-semibold tracking-[-0.04em] text-ink">
                 {priorityAthlete.name}
               </h2>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -278,7 +274,7 @@ export default function AthleteDetailDrawer({
             </div>
             <button
               onClick={handleClose}
-              className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.05] hover:text-ink"
+              className="ml-4 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
               aria-label="Close drawer"
             >
               <X aria-hidden="true" size={19} />
@@ -300,7 +296,7 @@ export default function AthleteDetailDrawer({
             <>
               {/* Quick Info Grid */}
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <div className="grid grid-cols-2 gap-x-5 gap-y-5 border-y border-border py-5">
                   <div>
                     <p className="section-label mb-1">
                       Email
@@ -330,7 +326,7 @@ export default function AthleteDetailDrawer({
                         New
                       </span>
                     ) : (
-                      <span className="inline-flex items-center rounded-full border border-white/[0.07] bg-white/[0.035] px-2 py-1 text-[11px] font-medium text-ink-dim">
+                      <span className="inline-flex items-center rounded-full border border-border bg-elevated/70 px-2 py-1 text-[11px] font-medium text-ink-dim">
                         Tenured
                       </span>
                     )}
@@ -349,7 +345,7 @@ export default function AthleteDetailDrawer({
                         return (
                           <div
                             key={race.id}
-                            className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-1 py-3 last:border-0"
+                            className="flex items-start justify-between gap-3 border-b border-border px-1 py-3 last:border-0"
                           >
                             <div>
                               <p className="text-sm font-semibold text-ink">{race.name}</p>
@@ -409,7 +405,7 @@ export default function AthleteDetailDrawer({
                 </p>
 
                 {contactLogs.length === 0 ? (
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.015]">
+                  <div className="rounded-xl border border-border bg-bg/55">
                     <EmptyState
                       heading="No conversations yet"
                       description="Log your first conversation with this athlete to start tracking communication."
@@ -424,7 +420,7 @@ export default function AthleteDetailDrawer({
                       return (
                         <div
                           key={log.id}
-                          className="flex items-start gap-3 border-b border-white/[0.06] py-3 last:border-0"
+                          className="flex items-start gap-3 border-b border-border py-3 last:border-0"
                         >
                           {/* Type indicator */}
                           <div className="flex flex-col items-center pt-1.5 shrink-0">
@@ -480,8 +476,7 @@ export default function AthleteDetailDrawer({
 
         {/* Action Bar */}
         <div
-          className="shrink-0 border-t border-white/[0.07] px-5 py-4 sm:px-6"
-          style={{ backgroundColor: '#12161B' }}
+          className="shrink-0 border-t border-border bg-surface px-5 py-4 sm:px-6"
         >
           <Button
             className="w-full"
@@ -491,7 +486,7 @@ export default function AthleteDetailDrawer({
             Log conversation
           </Button>
           <button
-            className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium text-ink-dim transition-colors hover:bg-white/[0.04] hover:text-ink"
+            className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium text-ink-dim transition-colors hover:bg-elevated hover:text-ink"
             onClick={() => onEditAthlete(athleteId)}
           >
             <Pencil aria-hidden="true" size={15} /> Edit athlete

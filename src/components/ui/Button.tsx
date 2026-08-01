@@ -8,8 +8,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-[#0B0D10] border border-transparent font-semibold hover:bg-[#8CB3FF] active:bg-[#6D9CF3]',
-  secondary: 'bg-elevated border border-white/[0.08] text-ink-dim hover:text-ink hover:border-white/[0.14] hover:bg-[#1D232B]',
+  primary: 'bg-accent text-white border border-transparent font-semibold shadow-[0_1px_2px_rgba(24,35,29,0.14)] hover:bg-accent-dark active:translate-y-px',
+  secondary: 'bg-surface border border-border text-ink-dim hover:text-ink hover:border-ink/25 hover:bg-elevated/55',
   danger: 'bg-signal-red/10 border border-signal-red/20 text-signal-red hover:bg-signal-red/15',
 }
 
