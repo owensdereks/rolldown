@@ -13,6 +13,7 @@ import Button from '../ui/Button'
 import { Input, Textarea } from '../ui/Input'
 import Modal from '../ui/Modal'
 import { dateOnlyToLocalDate, localDateKey } from '../../lib/dates'
+import { ArrowLeft, Archive, Plus, Save, UserRound } from 'lucide-react'
 
 interface EditAthleteFormProps {
   athleteId: string
@@ -163,16 +164,19 @@ export default function EditAthleteForm({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
-          Edit Athlete
-        </p>
-        <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
-          {name || 'Edit Athlete'}
-        </h2>
+    <div className="mx-auto max-w-2xl">
+      <div className="page-header">
+        <div>
+          <div className="mb-2 flex items-center gap-2.5 text-ink-muted">
+            <UserRound aria-hidden="true" size={17} strokeWidth={1.8} />
+            <span className="page-eyebrow">Athlete profile</span>
+          </div>
+          <h2 className="page-title">{name || 'Edit athlete'}</h2>
+          <p className="mt-2 text-sm text-ink-muted">Update contact details, races, and coaching notes.</p>
+        </div>
+        <Button variant="secondary" type="button" onClick={onCancel} icon={<ArrowLeft aria-hidden="true" size={16} />}>Back</Button>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="panel space-y-5 p-5 sm:p-6">
         <Input
           id="name"
           label="Name"
@@ -183,7 +187,7 @@ export default function EditAthleteForm({
           error={errors.name}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Input
             id="email"
             label="Email"
@@ -210,8 +214,8 @@ export default function EditAthleteForm({
           onChange={(e) => setCoachingStartDate(e.target.value)}
         />
 
-        <div className="border-t border-border pt-4">
-          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-3">
+        <div className="border-t border-white/[0.07] pt-5">
+          <p className="section-label mb-3">
             Races
           </p>
           {races.length > 0 && (
@@ -219,11 +223,11 @@ export default function EditAthleteForm({
               {races.map((race) => (
                 <div
                   key={race.id}
-                  className="flex items-center justify-between bg-elevated border border-border rounded-lg px-3 py-2"
+                  className="flex items-center justify-between rounded-[10px] border border-white/[0.07] bg-elevated px-3.5 py-3"
                 >
                   <div>
                     <p className="text-sm text-ink">{race.name}</p>
-                    <p className="font-mono text-[10px] text-ink-muted mt-0.5">
+                    <p className="mt-0.5 text-xs text-ink-muted">
                       {dateOnlyToLocalDate(race.date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -234,7 +238,7 @@ export default function EditAthleteForm({
                   <button
                     type="button"
                     onClick={() => handleRemoveRace(race)}
-                    className="font-mono text-[10px] text-ink-muted hover:text-signal-red uppercase tracking-widest transition-colors"
+                    className="min-h-11 rounded-lg px-2 text-xs text-ink-muted transition-colors hover:bg-signal-red/10 hover:text-signal-red"
                   >
                     Remove
                   </button>
@@ -242,7 +246,7 @@ export default function EditAthleteForm({
               ))}
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Input
               id="new-race-name"
               label="Race Name"
@@ -259,14 +263,14 @@ export default function EditAthleteForm({
             />
           </div>
           {raceError && (
-            <p className="font-mono text-[10px] text-signal-red mt-1">{raceError}</p>
+            <p className="mt-1 text-xs text-signal-red">{raceError}</p>
           )}
           <button
             type="button"
             onClick={handleAddRace}
-            className="mt-2 font-mono text-[10px] text-accent hover:text-accent/80 uppercase tracking-widest transition-colors"
+            className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium text-accent transition-colors hover:bg-accent/[0.06]"
           >
-            + Add Race
+            <Plus aria-hidden="true" size={15} /> Add race
           </button>
         </div>
 
@@ -281,41 +285,42 @@ export default function EditAthleteForm({
             placeholder="Any notes about this athlete..."
             rows={3}
           />
-          <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
+          <p className="mt-1.5 text-right text-xs tabular-nums text-ink-muted">
             {notes.length}/2000
           </p>
         </div>
 
         {errors.form && (
-          <p className="font-mono text-[10px] text-signal-red">{errors.form}</p>
+          <p className="text-xs text-signal-red">{errors.form}</p>
         )}
 
-        <div className="flex items-center gap-3 pt-2">
-          <Button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+        <div className="flex items-center justify-end gap-3 border-t border-white/[0.07] pt-5">
           <Button variant="secondary" type="button" onClick={onCancel}>
             Cancel
           </Button>
+          <Button type="submit" disabled={saving} icon={!saving ? <Save aria-hidden="true" size={16} /> : undefined}>
+            {saving ? 'Saving…' : 'Save changes'}
+          </Button>
         </div>
 
-        <div className="border-t border-border pt-4 mt-6">
+        <div className="mt-6 border-t border-white/[0.07] pt-5">
           <Button
             variant="danger"
             type="button"
             onClick={() => setShowArchiveModal(true)}
+            icon={<Archive aria-hidden="true" size={16} />}
           >
-            Archive Athlete
+            Archive athlete
           </Button>
         </div>
       </form>
 
       <Modal open={showArchiveModal} onClose={() => setShowArchiveModal(false)}>
         <div className="mb-4">
-          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
-            Confirm Archive
+          <p className="page-eyebrow mb-1">
+            Confirm archive
           </p>
-          <h3 className="font-display font-black text-2xl text-ink uppercase tracking-wide">
+          <h3 className="text-2xl font-semibold tracking-[-0.03em] text-ink">
             Archive {name}?
           </h3>
         </div>

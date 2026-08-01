@@ -161,8 +161,8 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-sm text-slate-500">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <p className="text-sm text-ink-muted">Loading…</p>
       </div>
     )
   }

@@ -4,6 +4,7 @@ import { createAthlete, enrollAthleteInRace } from '../../services/api'
 import Button from '../ui/Button'
 import { Input, Textarea } from '../ui/Input'
 import { localDateKey } from '../../lib/dates'
+import { ArrowLeft, Save, UserPlus } from 'lucide-react'
 
 interface AddAthleteFormProps {
   onCancel: () => void
@@ -82,16 +83,21 @@ export default function AddAthleteForm({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
-          New Athlete
-        </p>
-        <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
-          Add Athlete
-        </h2>
+    <div className="mx-auto max-w-2xl">
+      <div className="page-header">
+        <div>
+          <div className="mb-2 flex items-center gap-2.5 text-ink-muted">
+            <UserPlus aria-hidden="true" size={17} strokeWidth={1.8} />
+            <span className="page-eyebrow">New athlete</span>
+          </div>
+          <h2 className="page-title">Add athlete</h2>
+          <p className="mt-2 text-sm text-ink-muted">Add contact details and optional race context.</p>
+        </div>
+        <Button variant="secondary" type="button" onClick={onCancel} icon={<ArrowLeft aria-hidden="true" size={16} />}>
+          Back
+        </Button>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="panel space-y-5 p-5 sm:p-6">
         <Input
           id="name"
           label="Name"
@@ -102,7 +108,7 @@ export default function AddAthleteForm({
           error={errors.name}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Input
             id="email"
             label="Email"
@@ -129,11 +135,11 @@ export default function AddAthleteForm({
           onChange={(e) => setCoachingStartDate(e.target.value)}
         />
 
-        <div className="border-t border-border pt-4">
-          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-3">
-            Upcoming Race
+        <div className="border-t border-white/[0.07] pt-5">
+          <p className="section-label mb-3">
+            Upcoming race
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Input
               id="race-name"
               label="Race Name"
@@ -164,21 +170,19 @@ export default function AddAthleteForm({
             placeholder="Any notes about this athlete..."
             rows={3}
           />
-          <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
+          <p className="mt-1.5 text-right text-xs tabular-nums text-ink-muted">
             {notes.length}/2000
           </p>
         </div>
 
         {errors.form && (
-          <p className="font-mono text-[10px] text-signal-red">{errors.form}</p>
+          <p className="text-xs text-signal-red">{errors.form}</p>
         )}
 
-        <div className="flex items-center gap-3 pt-2">
-          <Button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Athlete'}
-          </Button>
-          <Button variant="secondary" type="button" onClick={onCancel}>
-            Cancel
+        <div className="flex items-center justify-end gap-3 border-t border-white/[0.07] pt-5">
+          <Button variant="secondary" type="button" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" disabled={saving} icon={!saving ? <Save aria-hidden="true" size={16} /> : undefined}>
+            {saving ? 'Saving…' : 'Save athlete'}
           </Button>
         </div>
       </form>

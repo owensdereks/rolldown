@@ -5,6 +5,7 @@ import { createAthlete, createContactLog, enrollAthleteInRace } from '../../serv
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import { localDateKey } from '../../lib/dates'
+import { ArrowLeft, Check, CircleAlert, CircleCheck, Download, FileSpreadsheet, Upload } from 'lucide-react'
 
 interface CSVImportProps {
   onCancel: () => void
@@ -221,26 +222,13 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
 
   if (importResult) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-surface border border-border rounded-2xl p-8 text-center">
-          <div className="w-14 h-14 rounded-full bg-signal-green/10 border border-signal-green/20 flex items-center justify-center mx-auto mb-5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-signal-green"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+      <div className="mx-auto max-w-2xl">
+        <div className="panel p-8 text-center">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-signal-green/15 bg-signal-green/10 text-signal-green">
+            <CircleCheck aria-hidden="true" size={22} strokeWidth={1.7} />
           </div>
-          <h2 className="font-display font-black text-2xl text-ink uppercase tracking-widest mb-2">
-            Import Complete
+          <h2 className="mb-2 text-2xl font-semibold tracking-[-0.03em] text-ink">
+            Import complete
           </h2>
           <p className="text-sm text-ink-dim mb-6 leading-relaxed">
             Successfully imported {importResult.imported} athlete
@@ -262,41 +250,35 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
     const warningCount = rows.filter((r) => r.status === 'warning').length
 
     return (
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-5">
+      <div className="mx-auto max-w-6xl">
+        <div className="page-header">
           <div>
-            <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-0.5">
-              CSV Import
-            </p>
-            <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
-              Preview
-            </h2>
+            <div className="mb-2 flex items-center gap-2.5 text-ink-muted">
+              <FileSpreadsheet aria-hidden="true" size={17} strokeWidth={1.8} />
+              <span className="page-eyebrow">CSV import</span>
+            </div>
+            <h2 className="page-title">Review your roster</h2>
+            <p className="mt-2 text-sm text-ink-muted">{validCount} ready · {errorCount} errors · {warningCount} warnings</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="secondary" onClick={onCancel}>
+            <Button variant="secondary" onClick={onCancel} icon={<ArrowLeft aria-hidden="true" size={16} />}>
               Cancel
             </Button>
-            <Button onClick={handleImport} disabled={validCount === 0 || importing}>
-              {importing ? 'Importing...' : `Import ${validCount}`}
+            <Button onClick={handleImport} disabled={validCount === 0 || importing} icon={!importing ? <Upload aria-hidden="true" size={16} /> : undefined}>
+              {importing ? 'Importing…' : `Import ${validCount}`}
             </Button>
           </div>
         </div>
 
-        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-4">
-          {validCount} ready
-          {errorCount > 0 && ` · ${errorCount} error${errorCount !== 1 ? 's' : ''}`}
-          {warningCount > 0 && ` · ${warningCount} warning${warningCount !== 1 ? 's' : ''}`}
-        </p>
-
-        <div className="bg-surface border border-border rounded-2xl overflow-x-auto">
+        <div className="panel overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border">
+              <tr className="border-b border-white/[0.07] bg-elevated/50">
                 {['Row', 'Name', 'Email', 'Phone', 'Start Date', 'Last Contact', 'Race', 'Status'].map(
                   (h) => (
                     <th
                       key={h}
-                      className="text-left py-3 px-4 font-mono text-[10px] text-ink-muted uppercase tracking-widest whitespace-nowrap"
+                      className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-ink-muted"
                     >
                       {h}
                     </th>
@@ -308,16 +290,16 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
               {rows.map((row) => (
                 <tr
                   key={row.rowNumber}
-                  className="border-b border-border/50 last:border-0 hover:bg-elevated/50 transition-colors"
+                  className="border-b border-white/[0.06] transition-colors last:border-0 hover:bg-white/[0.025]"
                 >
-                  <td className="py-3 px-4 font-mono text-xs text-ink-muted">{row.rowNumber}</td>
+                  <td className="px-4 py-3 text-xs tabular-nums text-ink-muted">{row.rowNumber}</td>
                   <td className="py-3 px-4 font-medium text-ink">{row.name || '—'}</td>
                   <td className="py-3 px-4 text-ink-dim">{row.email || '—'}</td>
                   <td className="py-3 px-4 text-ink-dim">{row.phone || '—'}</td>
-                  <td className="py-3 px-4 font-mono text-xs text-ink-dim">
+                  <td className="px-4 py-3 text-xs tabular-nums text-ink-dim">
                     {row.coaching_start_date || '(today)'}
                   </td>
-                  <td className="py-3 px-4 font-mono text-xs text-ink-dim">
+                  <td className="px-4 py-3 text-xs tabular-nums text-ink-dim">
                     {row.last_contact_date || '(none logged)'}
                   </td>
                   <td className="py-3 px-4 text-ink-dim">
@@ -325,17 +307,17 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
                   </td>
                   <td className="py-3 px-4">
                     {row.status === 'valid' && (
-                      <span className="text-signal-green text-base leading-none">✓</span>
+                      <Check aria-label="Valid" className="text-signal-green" size={17} />
                     )}
                     {row.status === 'error' && (
                       <span className="flex items-center gap-1.5">
-                        <span className="text-signal-red text-base leading-none">✗</span>
+                        <CircleAlert aria-hidden="true" className="text-signal-red" size={17} />
                         <Badge variant="red">{row.message}</Badge>
                       </span>
                     )}
                     {row.status === 'warning' && (
                       <span className="flex items-center gap-1.5">
-                        <span className="text-signal-amber text-base leading-none">⚠</span>
+                        <CircleAlert aria-hidden="true" className="text-signal-amber" size={17} />
                         <Badge variant="amber">{row.message}</Badge>
                       </span>
                     )}
@@ -352,40 +334,40 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
   // ── Upload screen ──
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="mx-auto max-w-2xl">
+      <div className="page-header">
         <div>
-          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-0.5">
-            CSV Import
-          </p>
-          <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
-            Import Athletes
-          </h2>
+          <div className="mb-2 flex items-center gap-2.5 text-ink-muted">
+            <FileSpreadsheet aria-hidden="true" size={17} strokeWidth={1.8} />
+            <span className="page-eyebrow">CSV import</span>
+          </div>
+          <h2 className="page-title">Import athletes</h2>
+          <p className="mt-2 text-sm text-ink-muted">Use the template to add your roster in one pass.</p>
         </div>
-        <Button variant="secondary" onClick={onCancel}>
-          Cancel
+        <Button variant="secondary" onClick={onCancel} icon={<ArrowLeft aria-hidden="true" size={16} />}>
+          Back
         </Button>
       </div>
 
-      <div className="bg-surface border border-border rounded-2xl p-6 mb-4">
-        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-2">
+      <div className="panel mb-4 p-6">
+        <p className="section-label mb-2">
           Step 1
         </p>
-        <h3 className="text-sm font-semibold text-ink mb-2">Download Template</h3>
+        <h3 className="mb-2 text-base font-semibold text-ink">Download template</h3>
         <p className="text-sm text-ink-dim mb-4 leading-relaxed">
           Start with our template — it includes the required columns and example rows showing the
           expected format.
         </p>
-        <Button variant="secondary" onClick={downloadTemplate}>
-          Download Template
+        <Button variant="secondary" onClick={downloadTemplate} icon={<Download aria-hidden="true" size={16} />}>
+          Download template
         </Button>
       </div>
 
-      <div className="bg-surface border border-border rounded-2xl p-6">
-        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-2">
+      <div className="panel p-6">
+        <p className="section-label mb-2">
           Step 2
         </p>
-        <h3 className="text-sm font-semibold text-ink mb-2">Upload Your Roster</h3>
+        <h3 className="mb-2 text-base font-semibold text-ink">Upload your roster</h3>
         <p className="text-sm text-ink-dim mb-4 leading-relaxed">
           Fill in the template with your athletes and upload it here.
         </p>
@@ -394,7 +376,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
           className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 cursor-pointer ${
             dragOver
               ? 'border-accent/50 bg-accent/5'
-              : 'border-border hover:border-ink-muted/50 hover:bg-elevated/50'
+              : 'border-white/[0.1] hover:border-white/[0.18] hover:bg-white/[0.02]'
           }`}
           onDragOver={(e) => {
             e.preventDefault()
@@ -405,26 +387,13 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
           onClick={() => fileInputRef.current?.click()}
         >
           <div className={`mb-3 transition-colors ${dragOver ? 'text-accent' : 'text-ink-muted'}`}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8 mx-auto"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
+            <Upload aria-hidden="true" className="mx-auto" size={28} strokeWidth={1.6} />
           </div>
           <p className="text-sm text-ink-dim mb-1">
             Drag and drop your CSV here, or{' '}
             <span className="text-accent">browse</span>
           </p>
-          <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
+          <p className="text-xs text-ink-muted">
             Only .csv files accepted
           </p>
           <input
@@ -437,7 +406,7 @@ export default function CSVImport({ onCancel, onDone }: CSVImportProps) {
         </div>
 
         {parseError && (
-          <p className="mt-3 font-mono text-[10px] text-signal-red">{parseError}</p>
+          <p className="mt-3 text-xs text-signal-red">{parseError}</p>
         )}
       </div>
     </div>

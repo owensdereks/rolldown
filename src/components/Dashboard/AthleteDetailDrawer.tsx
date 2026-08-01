@@ -7,6 +7,7 @@ import { Textarea } from '../ui/Input'
 import EmptyState from '../ui/EmptyState'
 import LogContactModal from './LogContactModal'
 import { dateOnlyToLocalDate, daysUntilDate } from '../../lib/dates'
+import { MessageSquare, Pencil, Trash2, X } from 'lucide-react'
 
 interface AthleteDetailDrawerProps {
   athleteId: string
@@ -253,20 +254,21 @@ export default function AthleteDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={`Details for ${priorityAthlete.name}`}
-        className={`fixed inset-y-0 right-0 z-40 w-full sm:max-w-md flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-40 flex w-full flex-col transition-transform duration-200 ease-out sm:max-w-[500px] ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={{
-          backgroundColor: '#0D1117',
-          borderLeft: '1px solid #1E2A3A',
-          boxShadow: '-20px 0 60px rgba(0,0,0,0.7)',
+          backgroundColor: '#12161B',
+          borderLeft: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '-24px 0 70px rgba(0,0,0,0.38)',
         }}
       >
         {/* Header */}
-        <div className="border-b border-border px-6 py-5 shrink-0">
+        <div className="shrink-0 border-b border-white/[0.07] px-5 py-5 sm:px-6">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide truncate">
+              <p className="page-eyebrow mb-1">Athlete profile</p>
+              <h2 className="truncate text-2xl font-semibold tracking-[-0.03em] text-ink">
                 {priorityAthlete.name}
               </h2>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -276,27 +278,16 @@ export default function AthleteDetailDrawer({
             </div>
             <button
               onClick={handleClose}
-              className="text-ink-muted hover:text-ink transition-colors ml-4 shrink-0 mt-1"
+              className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.05] hover:text-ink"
               aria-label="Close drawer"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <X aria-hidden="true" size={19} />
             </button>
           </div>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+        <div className="flex-1 space-y-7 overflow-y-auto px-5 py-6 sm:px-6">
           {loading ? (
             <div className="space-y-4 animate-pulse">
               <div className="h-4 w-48 bg-elevated rounded" />
@@ -309,37 +300,37 @@ export default function AthleteDetailDrawer({
             <>
               {/* Quick Info Grid */}
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
-                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
+                <div className="grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div>
+                    <p className="section-label mb-1">
                       Email
                     </p>
                     <p className="text-sm text-ink-dim truncate">{athleteData?.email || '—'}</p>
                   </div>
-                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
-                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
+                  <div>
+                    <p className="section-label mb-1">
                       Phone
                     </p>
                     <p className="text-sm text-ink-dim">{athleteData?.phone || '—'}</p>
                   </div>
-                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
-                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
-                      Coaching Since
+                  <div>
+                    <p className="section-label mb-1">
+                      Coaching since
                     </p>
                     <p className="text-sm text-ink-dim">
                       {athleteData ? formatCoachingSince(athleteData.coaching_start_date) : '—'}
                     </p>
                   </div>
-                  <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
-                    <p className="font-mono text-[9px] text-ink-muted uppercase tracking-widest mb-1">
+                  <div>
+                    <p className="section-label mb-1">
                       Tenure
                     </p>
                     {tenureDays <= 90 ? (
-                      <span className="inline-flex items-center rounded-full bg-accent/10 border border-accent/20 px-2 py-0.5 font-mono text-[9px] font-medium text-accent uppercase tracking-widest">
+                      <span className="inline-flex items-center rounded-full border border-accent/15 bg-accent/10 px-2 py-1 text-[11px] font-medium text-accent">
                         New
                       </span>
                     ) : (
-                      <span className="inline-flex items-center rounded-full bg-ink-muted/20 border border-ink-muted/30 px-2 py-0.5 font-mono text-[9px] font-medium text-ink-dim uppercase tracking-widest">
+                      <span className="inline-flex items-center rounded-full border border-white/[0.07] bg-white/[0.035] px-2 py-1 text-[11px] font-medium text-ink-dim">
                         Tenured
                       </span>
                     )}
@@ -349,7 +340,7 @@ export default function AthleteDetailDrawer({
                 {/* Races list */}
                 {races.length > 0 && (
                   <div>
-                    <p className="font-mono text-[9px] text-signal-purple/70 uppercase tracking-widest mb-2">
+                    <p className="section-label mb-2">
                       Races
                     </p>
                     <div className="space-y-2">
@@ -358,11 +349,11 @@ export default function AthleteDetailDrawer({
                         return (
                           <div
                             key={race.id}
-                            className="bg-signal-purple/5 border border-signal-purple/20 rounded-lg px-4 py-3 flex items-start justify-between gap-3"
+                            className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-1 py-3 last:border-0"
                           >
                             <div>
                               <p className="text-sm font-semibold text-ink">{race.name}</p>
-                              <p className="font-mono text-xs text-signal-purple mt-0.5">
+                              <p className="mt-0.5 text-xs text-ink-muted">
                                 {dateOnlyToLocalDate(race.date).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
@@ -373,9 +364,9 @@ export default function AthleteDetailDrawer({
                             </div>
                             <button
                               onClick={() => handleRemoveRace(race.id)}
-                              className="font-mono text-[10px] text-ink-muted hover:text-signal-red uppercase tracking-widest transition-colors shrink-0"
+                              className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs text-ink-muted transition-colors hover:bg-signal-red/10 hover:text-signal-red"
                             >
-                              Remove
+                              <Trash2 aria-hidden="true" size={14} /> Remove
                             </button>
                           </div>
                         )
@@ -388,11 +379,11 @@ export default function AthleteDetailDrawer({
               {/* Notes */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
+                  <p className="section-label">
                     Notes
                   </p>
                   {savedNotice && (
-                    <span className="font-mono text-[10px] text-signal-green uppercase tracking-widest">
+                    <span className="text-xs font-medium text-signal-green">
                       Saved
                     </span>
                   )}
@@ -406,23 +397,23 @@ export default function AthleteDetailDrawer({
                   onChange={(e) => setNotes(e.target.value)}
                   onBlur={handleNotesSave}
                 />
-                <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
+                <p className="mt-1.5 text-right text-xs tabular-nums text-ink-muted">
                   {notes.length}/{MAX_NOTES}
                 </p>
               </div>
 
               {/* Conversation History */}
               <div>
-                <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-3">
-                  Conversation History
+                <p className="section-label mb-3">
+                  Conversation history
                 </p>
 
                 {contactLogs.length === 0 ? (
-                  <div className="bg-surface border border-border rounded-xl">
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.015]">
                     <EmptyState
-                      heading="No Conversations Yet"
+                      heading="No conversations yet"
                       description="Log your first conversation with this athlete to start tracking communication."
-                      actionLabel="Log Conversation"
+                      actionLabel="Log conversation"
                       onAction={() => setContactModalOpen(true)}
                     />
                   </div>
@@ -433,7 +424,7 @@ export default function AthleteDetailDrawer({
                       return (
                         <div
                           key={log.id}
-                          className="flex items-start gap-3 py-3 border-b border-border/50 last:border-0"
+                          className="flex items-start gap-3 border-b border-white/[0.06] py-3 last:border-0"
                         >
                           {/* Type indicator */}
                           <div className="flex flex-col items-center pt-1.5 shrink-0">
@@ -444,7 +435,7 @@ export default function AthleteDetailDrawer({
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest">
+                            <p className="text-xs font-medium text-ink-muted">
                               {CONTACT_TYPE_LABELS[log.contact_type]}
                             </p>
                             {log.notes ? (
@@ -465,7 +456,7 @@ export default function AthleteDetailDrawer({
                           </div>
 
                           {/* Date */}
-                          <p className="font-mono text-[10px] text-ink-muted shrink-0 pt-0.5 uppercase tracking-widest">
+                          <p className="shrink-0 pt-0.5 text-xs tabular-nums text-ink-muted">
                             {formatRelativeDate(log.contacted_at)}
                           </p>
                         </div>
@@ -474,7 +465,7 @@ export default function AthleteDetailDrawer({
 
                     {hasMoreLogs && !showAllLogs && (
                       <button
-                        className="w-full text-center font-mono text-[10px] text-accent hover:text-accent/80 uppercase tracking-widest py-2.5 transition-colors"
+                        className="w-full py-3 text-center text-xs font-semibold text-accent transition-colors hover:text-ink"
                         onClick={() => setShowAllLogs(true)}
                       >
                         Show more ({contactLogs.length - INITIAL_LOG_COUNT} remaining)
@@ -489,20 +480,21 @@ export default function AthleteDetailDrawer({
 
         {/* Action Bar */}
         <div
-          className="border-t border-border px-6 py-4 shrink-0"
-          style={{ backgroundColor: '#0D1117' }}
+          className="shrink-0 border-t border-white/[0.07] px-5 py-4 sm:px-6"
+          style={{ backgroundColor: '#12161B' }}
         >
           <Button
-            className="w-full justify-center py-2.5"
+            className="w-full"
+            icon={<MessageSquare aria-hidden="true" size={17} />}
             onClick={() => setContactModalOpen(true)}
           >
-            Log Conversation
+            Log conversation
           </Button>
           <button
-            className="w-full text-center font-mono text-[11px] text-ink-dim hover:text-ink uppercase tracking-widest font-medium mt-3 transition-colors"
+            className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium text-ink-dim transition-colors hover:bg-white/[0.04] hover:text-ink"
             onClick={() => onEditAthlete(athleteId)}
           >
-            Edit Athlete
+            <Pencil aria-hidden="true" size={15} /> Edit athlete
           </button>
         </div>
       </div>

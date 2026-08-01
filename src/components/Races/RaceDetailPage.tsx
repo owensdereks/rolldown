@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Athlete, RaceWithAthletes } from '../../types'
 import { getRaces, enrollAthleteInRace, removeAthleteFromRace } from '../../services/api'
 import Button from '../ui/Button'
+import { ArrowLeft, CalendarDays, MapPin, Plus, Route, UsersRound } from 'lucide-react'
 
 interface RaceDetailPageProps {
   raceId: string
@@ -110,16 +111,16 @@ export default function RaceDetailPage({
       <div>
         <button
           onClick={onBack}
-          className="font-mono text-xs text-ink-muted hover:text-ink uppercase tracking-widest mb-6 transition-colors"
+          className="mb-6 flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-ink-muted transition-colors hover:bg-white/[0.04] hover:text-ink"
         >
-          ← Back
+          <ArrowLeft aria-hidden="true" size={16} /> Back
         </button>
-        <p className="text-ink-dim font-mono text-sm">
+        <p className="text-sm text-ink-dim">
           {error ? 'The race could not be loaded.' : 'Race not found.'}
         </p>
-        {error && <p className="mt-2 break-words font-mono text-xs text-signal-red">{error}</p>}
+        {error && <p className="mt-2 break-words text-xs text-signal-red">{error}</p>}
         {error && (
-          <button onClick={() => void fetchRace()} className="mt-4 font-mono text-xs uppercase tracking-widest text-accent">
+          <button onClick={() => void fetchRace()} className="mt-4 min-h-11 text-sm font-medium text-accent">
             Try again
           </button>
         )}
@@ -132,27 +133,26 @@ export default function RaceDetailPage({
   const unenrolled = allAthletes.filter(a => !enrolledIds.has(a.id))
 
   return (
-    <div className="max-w-2xl">
-      <button
-        onClick={onBack}
-        className="font-mono text-xs text-ink-muted hover:text-ink uppercase tracking-widest mb-6 transition-colors"
-      >
-        ← Back
-      </button>
+    <div className="max-w-3xl">
 
       {error && (
-        <div role="alert" className="mb-5 rounded-xl border border-signal-red/30 bg-signal-red/10 px-4 py-3 text-sm text-signal-red">
+        <div role="alert" className="mb-5 rounded-xl border border-signal-red/20 bg-signal-red/[0.07] px-4 py-3 text-sm text-signal-red">
           {error}
         </div>
       )}
 
       {/* Race header */}
-      <div className="mb-8">
-        <h1 className="font-display font-black text-4xl text-ink uppercase tracking-wide leading-none">
+      <div className="page-header">
+        <div>
+          <div className="mb-2 flex items-center gap-2.5 text-ink-muted">
+            <CalendarDays aria-hidden="true" size={17} strokeWidth={1.8} />
+            <span className="page-eyebrow">Race details</span>
+          </div>
+        <h1 className="page-title">
           {race.name}
         </h1>
-        <p className="font-mono text-sm text-accent mt-2">{formatFullDate(race.date)}</p>
-        <p className="font-mono text-xs text-ink-muted mt-0.5">
+        <p className="mt-2 text-sm text-ink-dim">{formatFullDate(race.date)}</p>
+        <p className="mt-0.5 text-xs tabular-nums text-ink-muted">
           {days > 0
             ? `in ${days} days`
             : days === 0
@@ -160,32 +160,37 @@ export default function RaceDetailPage({
               : `${Math.abs(days)} days ago`}
         </p>
         {(race.distance || race.location) && (
-          <div className="flex items-center gap-4 mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-4">
             {race.distance && (
-              <span className="inline-flex items-center rounded-full bg-elevated border border-border px-2.5 py-0.5 font-mono text-[10px] text-ink-dim uppercase tracking-widest">
-                {race.distance}
+              <span className="inline-flex items-center gap-1.5 text-xs text-ink-dim">
+                <Route aria-hidden="true" size={14} /> {race.distance}
               </span>
             )}
             {race.location && (
-              <span className="font-mono text-xs text-ink-dim">{race.location}</span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-ink-dim">
+                <MapPin aria-hidden="true" size={14} /> {race.location}
+              </span>
             )}
           </div>
         )}
+        </div>
+        <Button variant="secondary" onClick={onBack} icon={<ArrowLeft aria-hidden="true" size={16} />}>Back</Button>
       </div>
 
       {/* Athletes enrolled */}
       <div className="mb-8">
-        <h2 className="font-display font-black text-xl text-ink uppercase tracking-wide mb-3">
-          Athletes in This Race
-        </h2>
+        <div className="mb-3 flex items-center gap-2.5">
+          <UsersRound aria-hidden="true" className="text-ink-muted" size={17} />
+          <h2 className="section-title">Athletes in this race</h2>
+        </div>
         {race.athletes.length === 0 ? (
-          <p className="font-mono text-xs text-ink-muted py-4">No athletes enrolled yet.</p>
+          <p className="py-4 text-sm text-ink-muted">No athletes enrolled yet.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="panel overflow-hidden">
             {race.athletes.map(athlete => (
               <div
                 key={athlete.id}
-                className="bg-surface border border-border rounded-xl px-4 py-3 flex items-center justify-between"
+                className="flex items-center justify-between border-b border-white/[0.06] bg-surface px-4 py-3 last:border-0"
               >
                 <span className="text-sm font-semibold text-ink">{athlete.name}</span>
                 <Button
@@ -205,14 +210,14 @@ export default function RaceDetailPage({
       {/* Add athlete */}
       {unenrolled.length > 0 && (
         <div>
-          <h2 className="font-display font-black text-xl text-ink uppercase tracking-wide mb-3">
-            Add Athlete
+          <h2 className="section-title mb-3">
+            Add athlete
           </h2>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
             <select
               value={selectedAthleteId}
               onChange={e => setSelectedAthleteId(e.target.value)}
-              className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-ink focus:outline-none focus:border-accent/50 transition-colors"
+              className="min-h-11 flex-1 rounded-[10px] border border-white/[0.08] bg-elevated px-3.5 py-2.5 text-sm text-ink transition-colors hover:border-white/[0.14] focus:border-accent/60"
             >
               <option value="">Select an athlete…</option>
               {unenrolled.map(a => (
@@ -222,6 +227,7 @@ export default function RaceDetailPage({
             <Button
               onClick={handleAdd}
               disabled={!selectedAthleteId || adding}
+              icon={!adding ? <Plus aria-hidden="true" size={16} /> : undefined}
             >
               {adding ? 'Adding…' : 'Add'}
             </Button>

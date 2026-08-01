@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { RaceWithAthletes } from '../../types'
 import { getRaces } from '../../services/api'
+import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface RaceCalendarProps {
   coachId: string
@@ -87,56 +88,57 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
 
   return (
     <div>
-      <button
-        onClick={onBack}
-        className="font-mono text-xs text-ink-muted hover:text-ink uppercase tracking-widest mb-6 transition-colors"
-      >
-        ← Back
-      </button>
-
-      {/* Month navigation */}
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="font-display font-black text-3xl text-ink uppercase tracking-wide">
-          {monthLabel}
-        </h2>
+      <div className="page-header">
+        <div>
+          <div className="mb-2 flex items-center gap-2.5 text-ink-muted">
+            <CalendarDays aria-hidden="true" size={17} strokeWidth={1.8} />
+            <span className="page-eyebrow">Race calendar</span>
+          </div>
+          <h2 className="page-title">{monthLabel}</h2>
+        </div>
         <div className="flex items-center gap-2">
+          <button onClick={onBack} className="mr-1 flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-ink-dim transition-colors hover:bg-white/[0.05] hover:text-ink">
+            <ArrowLeft aria-hidden="true" size={16} /> Back
+          </button>
           <button
             onClick={prevMonth}
-            className="px-3 py-1.5 font-mono text-xs text-ink-dim hover:text-ink border border-border hover:border-white/20 rounded-lg transition-all"
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-white/[0.08] bg-elevated text-ink-dim transition-colors hover:border-white/[0.14] hover:text-ink"
+            aria-label="Previous month"
           >
-            ← Prev
+            <ChevronLeft aria-hidden="true" size={18} />
           </button>
           <button
             onClick={nextMonth}
-            className="px-3 py-1.5 font-mono text-xs text-ink-dim hover:text-ink border border-border hover:border-white/20 rounded-lg transition-all"
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-white/[0.08] bg-elevated text-ink-dim transition-colors hover:border-white/[0.14] hover:text-ink"
+            aria-label="Next month"
           >
-            Next →
+            <ChevronRight aria-hidden="true" size={18} />
           </button>
         </div>
       </div>
 
       {loading ? (
         <div className="h-64 flex items-center justify-center">
-          <p className="font-mono text-xs text-ink-muted animate-pulse uppercase tracking-widest">
+          <p className="animate-pulse text-sm text-ink-muted">
             Loading races…
           </p>
         </div>
       ) : error ? (
         <div className="rounded-xl border border-signal-red/30 bg-surface p-8 text-center">
           <p className="text-sm text-ink-dim">The race calendar could not be loaded.</p>
-          <p className="mt-2 break-words font-mono text-xs text-signal-red">{error}</p>
-          <button onClick={loadRaces} className="mt-4 font-mono text-xs uppercase tracking-widest text-accent">
+          <p className="mt-2 break-words text-xs text-signal-red">{error}</p>
+          <button onClick={loadRaces} className="mt-4 min-h-11 text-sm font-medium text-accent">
             Try again
           </button>
         </div>
       ) : (
-        <div className="border border-border rounded-xl overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-surface">
           {/* Day-of-week header */}
-          <div className="grid grid-cols-7 border-b border-border bg-surface">
+          <div className="grid grid-cols-7 border-b border-white/[0.07] bg-elevated/50">
             {DAY_LABELS.map(label => (
               <div
                 key={label}
-                className="py-2 text-center font-mono text-[10px] text-ink-muted uppercase tracking-widest border-r border-border last:border-r-0"
+                className="border-r border-white/[0.06] py-2.5 text-center text-[11px] font-medium text-ink-muted last:border-r-0"
               >
                 {label}
               </div>
@@ -145,13 +147,13 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
 
           {/* Week rows */}
           {weeks.map((week, wi) => (
-            <div key={wi} className="grid grid-cols-7 border-b border-border last:border-b-0">
+            <div key={wi} className="grid grid-cols-7 border-b border-white/[0.06] last:border-b-0">
               {week.map((day, di) => {
                 if (!day) {
                   return (
                     <div
                       key={di}
-                      className="min-h-[80px] p-1.5 border-r border-border last:border-r-0 bg-bg/40"
+                      className="min-h-[92px] border-r border-white/[0.06] bg-bg/25 p-2 last:border-r-0"
                     />
                   )
                 }
@@ -165,13 +167,13 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
                   <div
                     key={di}
                     className={[
-                      'min-h-[80px] p-1.5 border-r border-border last:border-r-0',
-                      isToday ? 'ring-1 ring-inset ring-accent/60 bg-accent/5' : '',
+                      'min-h-[92px] border-r border-white/[0.06] p-2 last:border-r-0',
+                      isToday ? 'bg-accent/[0.055]' : '',
                       !isCurrentMonth ? 'opacity-30' : '',
                     ].join(' ')}
                   >
                     <span
-                      className={`font-mono text-[11px] leading-none block mb-1 ${
+                      className={`mb-2 block text-xs tabular-nums leading-none ${
                         isToday ? 'text-accent font-semibold' : 'text-ink-muted'
                       }`}
                     >
@@ -183,7 +185,7 @@ export default function RaceCalendar({ coachId, onViewRace, onBack }: RaceCalend
                           key={race.id}
                           onClick={() => onViewRace(race.id)}
                           title={race.name}
-                          className="w-full text-left px-1.5 py-0.5 rounded font-mono text-[9px] bg-signal-purple/20 text-signal-purple hover:bg-signal-purple/35 border border-signal-purple/30 truncate transition-colors"
+                          className="w-full truncate rounded-md border border-accent/15 bg-accent/[0.08] px-1.5 py-1 text-left text-[10px] text-accent transition-colors hover:bg-accent/[0.13]"
                         >
                           {race.name}
                         </button>

@@ -22,19 +22,19 @@ export function Input({
       {label && (
         <label
           htmlFor={id}
-          className="block font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1.5"
+          className="field-label mb-2 block"
         >
           {label}
         </label>
       )}
       <input
         id={id}
-        className={`w-full bg-elevated border rounded-lg px-3 py-2 text-sm text-ink placeholder-ink-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors ${
-          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-border hover:border-ink-muted/50'
+        className={`min-h-11 w-full rounded-[10px] border bg-elevated px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-muted/70 transition-colors ${
+          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-white/[0.08] hover:border-white/[0.14] focus:border-accent/60'
         } ${className}`}
         {...props}
       />
-      {error && <p className="mt-1.5 font-mono text-[10px] text-signal-red">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-signal-red">{error}</p>}
     </div>
   )
 }
@@ -51,19 +51,19 @@ export function Textarea({
       {label && (
         <label
           htmlFor={id}
-          className="block font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1.5"
+          className="field-label mb-2 block"
         >
           {label}
         </label>
       )}
       <textarea
         id={id}
-        className={`w-full bg-elevated border rounded-lg px-3 py-2 text-sm text-ink placeholder-ink-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors resize-none ${
-          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-border hover:border-ink-muted/50'
+        className={`w-full resize-none rounded-[10px] border bg-elevated px-3.5 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted/70 transition-colors ${
+          error ? 'border-signal-red/50 bg-signal-red/5' : 'border-white/[0.08] hover:border-white/[0.14] focus:border-accent/60'
         } ${className}`}
         {...props}
       />
-      {error && <p className="mt-1.5 font-mono text-[10px] text-signal-red">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-signal-red">{error}</p>}
     </div>
   )
 }

@@ -17,10 +17,10 @@ export default function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <div className="text-center py-12 px-4">
-      {icon && <div className="mx-auto mb-4 text-ink-muted">{icon}</div>}
-      <h3 className="font-display font-bold text-xl text-ink uppercase tracking-wide mb-2">{heading}</h3>
-      <p className="text-sm text-ink-dim mb-6 max-w-xs mx-auto leading-relaxed">
+    <div className="px-5 py-14 text-center">
+      {icon && <div className="mx-auto mb-5 text-ink-muted">{icon}</div>}
+      <h3 className="mb-2 text-lg font-semibold tracking-[-0.02em] text-ink">{heading}</h3>
+      <p className="mx-auto mb-6 max-w-sm text-sm leading-relaxed text-ink-dim">
         {description}
       </p>
       {actionLabel && onAction && (

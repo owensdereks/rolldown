@@ -1,81 +1,67 @@
-# Rolldown — Design System
+# Rolldown design system
 
-## Design Principles
+Rolldown is a calm, premium coaching workspace. It should feel focused at 6am, remain easy to scan with 15–25 athletes, and use visual emphasis only when it helps a coach decide what to do next.
 
-- **Clean, calm, professional.** This is a tool coaches open at 6am — no visual noise.
-- **High information density** without feeling cluttered.
-- **Accessible to all comfort levels.** Becca (low-tech comfort) should never feel overwhelmed. Alex should feel nudged, not lectured.
+## Principles
 
----
+- **Quiet hierarchy.** Typography and spacing create structure before borders or color.
+- **Operational, not promotional.** Controls are direct, copy is concise, and decoration stays restrained.
+- **Status color has meaning.** Red, amber, and green indicate follow-up health; blue identifies actions; purple is limited to race context.
+- **One surface, one purpose.** Prefer dividers and grouped regions over nested cards.
+- **Accessible by default.** Body copy is at least 14px, interactive targets are at least 44px, focus is visible, and motion respects reduced-motion preferences.
 
-## Color Palette
+## Foundations
 
-| Token              | Tailwind Class    | Usage                                  |
-| ------------------ | ----------------- | -------------------------------------- |
-| Primary text       | `slate-800`       | Headings, key labels                   |
-| Secondary text     | `slate-600`       | Body text, descriptions                |
-| Muted text         | `slate-400`       | Captions, timestamps                   |
-| Accent             | `blue-600`        | Interactive elements, links, primary buttons |
-| Severity — overdue | `red-500`         | Overdue indicators                     |
-| Severity — warning | `amber-500`       | Approaching threshold                  |
-| Severity — healthy | `emerald-500`     | Healthy / on-track                     |
-| Card background    | `white`           | Card surfaces                          |
-| Page background    | `slate-50`        | App background                         |
-| Hover background   | `slate-100`       | Hover states                           |
-| Borders            | `slate-200`       | Dividers, card borders                 |
+### Color
 
-## Typography
+| Token | Value | Use |
+| --- | --- | --- |
+| `bg` | `#0B0D10` | App background |
+| `surface` | `#12161B` | Primary panels and rows |
+| `elevated` | `#191E25` | Inputs, selected controls, modal surfaces |
+| `border` | `#252B34` | Low-contrast boundaries |
+| `ink` | `#F1F3F5` | Primary text |
+| `ink-dim` | `#A4ADB9` | Secondary text |
+| `ink-muted` | `#747E8B` | Metadata and labels |
+| `accent` | `#78A6FF` | Primary actions and focus |
+| `signal-red` | `#E66F79` | Overdue and destructive states |
+| `signal-amber` | `#D6A85F` | Due-soon and warning states |
+| `signal-green` | `#69B68D` | Healthy and successful states |
+| `signal-purple` | `#A897D4` | Race context only |
 
-- **Font:** Inter (loaded from Google Fonts)
-- **Headings:** `text-lg font-semibold text-slate-800`
-- **Body:** `text-sm text-slate-600`
-- **Captions / Labels:** `text-xs text-slate-400 uppercase tracking-wide`
-- **Input Labels:** `text-xs text-slate-500 uppercase tracking-wide font-medium`
+Borders normally use translucent white (`6–9%`) so surfaces remain legible without looking boxed in. Glows and saturated gradients are not part of the system.
 
-## Spacing
+### Typography
 
-| Element          | Class              |
-| ---------------- | ------------------ |
-| Card padding     | `p-4`              |
-| Section gaps     | `space-y-6`        |
-| List item padding| `py-3 px-4`        |
-| Card radius      | `rounded-lg`       |
-| Button/input radius | `rounded-md`    |
+- Outfit is the UI family at weights 400–700.
+- Barlow Condensed is reserved for the Rolldown wordmark.
+- Page titles use sentence case, 28–36px, weight 600, and tight tracking.
+- Section titles use 16px/600. Body copy uses 14–16px. Labels and metadata use 12–13px.
+- Use tabular numerals for day counts, dates, counters, and other aligned metrics.
+- Avoid all-caps and wide tracking except the uppercase wordmark.
+
+### Shape and spacing
+
+- Controls: 44px minimum height and 10px radius.
+- Panels: 14px radius with a subtle 1px border.
+- Modals and large states: 16px radius and the shared panel shadow.
+- Standard page gutter: responsive from 16px to 32px.
+- Standard content width: 1152px (`max-w-6xl`).
+- UI transitions: 150–200ms color or transform transitions, disabled when reduced motion is requested.
 
 ## Components
 
-All reusable components live in `src/components/ui/`.
+- **Buttons:** primary blue, neutral secondary, and low-chroma destructive. Icons are optional and always come from Lucide.
+- **Inputs:** elevated charcoal surface, visible hover/focus border, 15px input text, labels above the field.
+- **Badges:** compact status indicators. Do not use badges for ordinary metadata when plain text is clearer.
+- **Panels and lists:** use one outer panel with row dividers. Avoid making every row a separate card.
+- **Page headers:** contextual label and title on the left; page-level actions on the right; stack on mobile.
+- **Overlays:** neutral dark backdrop, subtle blur, restrained shadow, and clear close control.
+- **Feedback:** inline alerts for recoverable errors and a single bottom toast for successful quick actions.
 
-### Button
+## Responsive behavior
 
-Variants: `primary`, `secondary`, `danger`
-
-| Variant   | Classes                                                    |
-| --------- | ---------------------------------------------------------- |
-| primary   | `bg-blue-600 text-white hover:bg-blue-700`                 |
-| secondary | `bg-white border border-slate-200 text-slate-700 hover:bg-slate-50` |
-| danger    | `bg-red-50 text-red-600 border border-red-200 hover:bg-red-100`     |
-
-All buttons: `rounded-md px-4 py-2 text-sm font-medium transition-colors`
-
-### Input
-
-- Border: `border border-slate-200 rounded-md px-3 py-2 text-sm`
-- Focus: `focus:ring-2 focus:ring-blue-500 focus:ring-offset-1`
-- Label: `text-xs text-slate-500 uppercase tracking-wide font-medium` (above input)
-- Error: inline red text below field
-
-### Modal
-
-- Overlay: `bg-black/50` backdrop
-- Card: `bg-white rounded-lg p-6 max-w-md`, centered
-- Close: backdrop click + X button
-
-### Badge
-
-- Base: `rounded-full px-2 py-0.5 text-xs font-medium`
-- Variants: `red`, `amber`, `emerald` (severity), `race` (upcoming race: `bg-blue-50 text-blue-700 border border-blue-200`)
-
-### EmptyState
-
-- Centered layout with optional icon, heading, description, and CTA button
+- Page headers and form grids stack below 640px.
+- Secondary roster metadata may collapse, but every action remains accessible.
+- Tables scroll horizontally instead of compressing columns beyond readability.
+- The athlete drawer fills small screens and is capped at 500px on larger screens.

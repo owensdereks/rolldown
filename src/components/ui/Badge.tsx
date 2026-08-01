@@ -8,16 +8,16 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  red: 'bg-signal-red/10 text-signal-red border border-signal-red/25',
-  amber: 'bg-signal-amber/10 text-signal-amber border border-signal-amber/25',
-  emerald: 'bg-signal-green/10 text-signal-green border border-signal-green/25',
-  race: 'bg-signal-purple/10 text-signal-purple border border-signal-purple/25',
+  red: 'bg-signal-red/10 text-signal-red border border-signal-red/15',
+  amber: 'bg-signal-amber/10 text-signal-amber border border-signal-amber/15',
+  emerald: 'bg-signal-green/10 text-signal-green border border-signal-green/15',
+  race: 'bg-white/[0.035] text-ink-dim border border-white/[0.08]',
 }
 
 export default function Badge({ variant, children }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${variantStyles[variant]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium leading-none ${variantStyles[variant]}`}
     >
       {children}
     </span>

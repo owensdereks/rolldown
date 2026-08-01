@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import type { AthleteWithPriority, ContactLog } from '../../types'
 import { createContactLog } from '../../services/api'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { Textarea } from '../ui/Input'
+import { MessageCircle, Phone, Video } from 'lucide-react'
 
 interface LogContactModalProps {
   athlete: AthleteWithPriority
@@ -25,13 +27,10 @@ const CONTACT_TYPE_LABELS: Record<ContactLog['contact_type'], string> = {
   other: 'Unknown method',
 }
 
-const CONTACT_TYPE_ICONS: Record<ContactLog['contact_type'], string> = {
-  text: '💬',
-  call: '📞',
-  video: '▣',
-  unknown: '?',
-  email: '✉️',
-  other: '?',
+const CONTACT_TYPE_ICONS: Record<LoggableContactType, ReactNode> = {
+  text: <MessageCircle aria-hidden="true" size={18} strokeWidth={1.7} />,
+  call: <Phone aria-hidden="true" size={18} strokeWidth={1.7} />,
+  video: <Video aria-hidden="true" size={18} strokeWidth={1.7} />,
 }
 
 const MAX_NOTES = 500
@@ -68,32 +67,32 @@ export default function LogContactModal({
   return (
     <Modal open onClose={onClose}>
       <div className="mb-5">
-        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-1">
-          Log Conversation
+        <p className="page-eyebrow mb-1">
+          Log conversation
         </p>
-        <h3 className="font-display font-black text-2xl text-ink uppercase tracking-wide">
+        <h3 className="text-2xl font-semibold tracking-[-0.03em] text-ink">
           {athlete.name}
         </h3>
       </div>
 
       {/* Contact type */}
       <div className="mb-5">
-        <p className="font-mono text-[10px] text-ink-muted uppercase tracking-widest mb-2.5">
+        <p className="section-label mb-2.5">
           Method
         </p>
         <div className="grid grid-cols-3 gap-2">
           {CONTACT_TYPES.map((type) => (
             <button
               key={type}
-              className={`py-3 rounded-xl text-xs font-medium transition-all duration-150 flex flex-col items-center gap-1.5 ${
+              className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border py-3 text-xs font-medium transition-colors duration-150 ${
                 contactType === type
-                  ? 'bg-accent/15 text-accent border border-accent/30'
-                  : 'bg-surface border border-border text-ink-dim hover:border-white/15 hover:text-ink'
+                  ? 'border-accent/30 bg-accent/10 text-accent'
+                  : 'border-white/[0.07] bg-surface text-ink-dim hover:border-white/[0.13] hover:text-ink'
               }`}
               onClick={() => setContactType(type)}
             >
-              <span className="text-base leading-none">{CONTACT_TYPE_ICONS[type]}</span>
-              <span className="font-mono text-[10px] uppercase tracking-widest">
+              <span>{CONTACT_TYPE_ICONS[type]}</span>
+              <span className="text-xs">
                 {CONTACT_TYPE_LABELS[type]}
               </span>
             </button>
@@ -102,7 +101,7 @@ export default function LogContactModal({
       </div>
 
       {error && (
-        <p role="alert" className="font-mono text-[10px] text-signal-red mb-4">
+        <p role="alert" className="mb-4 text-xs text-signal-red">
           {error}
         </p>
       )}
@@ -118,7 +117,7 @@ export default function LogContactModal({
           maxLength={MAX_NOTES}
           onChange={(e) => setNotes(e.target.value)}
         />
-        <p className="font-mono text-[10px] text-ink-muted text-right mt-1.5">
+        <p className="mt-1.5 text-right text-xs tabular-nums text-ink-muted">
           {notes.length}/{MAX_NOTES}
         </p>
       </div>
